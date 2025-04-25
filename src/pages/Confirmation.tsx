@@ -1,0 +1,124 @@
+
+import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
+import { Check, ExternalLink, Link } from 'lucide-react';
+import RedirectLayout from '../components/RedirectLayout';
+import CountdownTimer from '../components/CountdownTimer';
+import { Button } from '../components/ui/button';
+import { useToast } from '../hooks/use-toast';
+
+const Confirmation = () => {
+  const location = useLocation();
+  const { toast } = useToast();
+  const [timerComplete, setTimerComplete] = useState(false);
+  const [destinationUrl, setDestinationUrl] = useState('');
+  const [displayUrl, setDisplayUrl] = useState('');
+  
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const url = params.get('url');
+    
+    if (url) {
+      try {
+        const decoded = decodeURIComponent(url);
+        setDestinationUrl(decoded);
+        
+        // Create a display version of the URL (shortened if necessary)
+        const urlObj = new URL(decoded);
+        const hostname = urlObj.hostname;
+        const path = urlObj.pathname.length > 15 
+          ? urlObj.pathname.substring(0, 15) + '...' 
+          : urlObj.pathname;
+          
+        setDisplayUrl(`${hostname}${path}`);
+      } catch (e) {
+        console.error('Invalid URL:', e);
+        setDestinationUrl('https://example.com');
+        setDisplayUrl('example.com');
+      }
+    } else {
+      setDestinationUrl('https://example.com');
+      setDisplayUrl('example.com');
+    }
+  }, [location.search]);
+
+  const handleTimerComplete = () => {
+    setTimerComplete(true);
+  };
+
+  const handleRedirect = () => {
+    // Perform the actual redirect
+    window.location.href = destinationUrl;
+  };
+  
+  const handleCopy = () => {
+    navigator.clipboard.writeText(destinationUrl)
+      .then(() => {
+        toast({
+          title: 'URL Copied',
+          description: 'Link copied to clipboard successfully',
+        });
+      })
+      .catch(err => {
+        console.error('Failed to copy URL:', err);
+        toast({
+          title: 'Copy Failed',
+          description: 'Unable to copy link to clipboard',
+          variant: 'destructive',
+        });
+      });
+  };
+
+  return (
+    <RedirectLayout
+      title="Ready to Proceed"
+      subtitle="Your link is ready for access"
+    >
+      <div className="space-y-8 py-4">
+        <div className="text-center">
+          <div className="inline-flex items-center justify-center w-20 h-20 mb-4 bg-green-50 rounded-full">
+            <Check className="w-12 h-12 text-redirector-success" />
+          </div>
+          
+          <h3 className="text-2xl font-bold mb-2">Destination Verified</h3>
+          
+          <div className="bg-gray-50 p-4 rounded-lg mt-4 mb-6">
+            <p className="text-sm text-gray-500 mb-1">You are being redirected to:</p>
+            <p className="font-medium text-lg text-redirector-dark break-all">
+              {displayUrl}
+            </p>
+          </div>
+        </div>
+        
+        {!timerComplete ? (
+          <CountdownTimer 
+            seconds={5}
+            onComplete={handleTimerComplete}
+            showCheckOnComplete={false}
+          />
+        ) : (
+          <div className="flex flex-col gap-4 animate-fade-in">
+            <Button 
+              onClick={handleRedirect}
+              className="px-8 py-6 text-lg bg-gradient-to-r from-redirector-primary to-redirector-secondary hover:opacity-90 transition-opacity animate-scale"
+            >
+              <ExternalLink className="mr-2 h-5 w-5" />
+              Proceed to Destination
+            </Button>
+            
+            <Button 
+              onClick={handleCopy}
+              variant="outline"
+              className="px-8 py-4"
+            >
+              <Link className="mr-2 h-4 w-4" />
+              Copy Link
+            </Button>
+          </div>
+        )}
+      </div>
+    </RedirectLayout>
+  );
+};
+
+export default Confirmation;

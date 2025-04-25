@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -96,6 +97,49 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-gradient-to-br from-slate-50 to-slate-200 text-foreground min-h-screen;
+  }
+}
+
+@layer components {
+  .security-badge {
+    @apply flex items-center justify-center gap-2 text-gray-600 font-medium;
+  }
+
+  .progress-container {
+    @apply mb-8;
+  }
+
+  .progress-bar {
+    @apply h-2.5 bg-gray-200 rounded-full overflow-hidden relative;
+  }
+
+  .progress-fill {
+    @apply absolute h-full bg-gradient-to-r from-redirector-primary to-redirector-accent rounded-full transition-all duration-500;
+  }
+
+  .timer-circle {
+    @apply w-32 h-32 rounded-full flex items-center justify-center relative mx-auto mb-4;
+    box-shadow: inset 0 0 0 8px #e9ecef;
+  }
+
+  .timer-circle::before {
+    @apply content-[''] absolute w-[105px] h-[105px] rounded-full bg-white;
+  }
+
+  .scan-animation {
+    @apply absolute w-full h-1 bg-redirector-accent top-1/2 -translate-y-1/2 animate-spin opacity-30;
+  }
+
+  .card-container {
+    @apply w-full max-w-xl bg-white rounded-xl overflow-hidden shadow-lg;
+  }
+
+  .card-header {
+    @apply bg-gradient-to-r from-redirector-primary to-redirector-secondary p-6 text-white text-center;
+  }
+
+  .card-content {
+    @apply p-6 md:p-8;
   }
 }
