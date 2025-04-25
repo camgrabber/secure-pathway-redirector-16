@@ -1,6 +1,8 @@
 
 import React from 'react';
 import { ShieldCheck } from 'lucide-react';
+import AdUnit from './AdUnit';
+import { useAdManager } from '../utils/adManager';
 
 interface RedirectLayoutProps {
   children: React.ReactNode;
@@ -13,6 +15,10 @@ const RedirectLayout: React.FC<RedirectLayoutProps> = ({
   title, 
   subtitle 
 }) => {
+  const { getActiveAdsByPosition } = useAdManager();
+  const topAds = getActiveAdsByPosition('top');
+  const bottomAds = getActiveAdsByPosition('bottom');
+  
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4 py-12">
       <div className="card-container">
@@ -22,7 +28,17 @@ const RedirectLayout: React.FC<RedirectLayoutProps> = ({
         </div>
         
         <div className="card-content">
+          {/* Top ad placement */}
+          {topAds.map(ad => (
+            <AdUnit key={ad.id} code={ad.code} />
+          ))}
+          
           {children}
+          
+          {/* Bottom ad placement */}
+          {bottomAds.map(ad => (
+            <AdUnit key={ad.id} code={ad.code} />
+          ))}
         </div>
         
         <div className="px-6 pb-6">

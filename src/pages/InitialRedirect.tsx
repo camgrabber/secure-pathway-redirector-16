@@ -7,6 +7,8 @@ import ProgressBar from '../components/ProgressBar';
 import CountdownTimer from '../components/CountdownTimer';
 import { Button } from '../components/ui/button';
 import { useToast } from '../hooks/use-toast';
+import AdUnit from '../components/AdUnit';
+import { useAdManager } from '../utils/adManager';
 
 const InitialRedirect = () => {
   const navigate = useNavigate();
@@ -15,6 +17,8 @@ const InitialRedirect = () => {
   const [loadingComplete, setLoadingComplete] = useState(false);
   const [timerComplete, setTimerComplete] = useState(false);
   const [destinationUrl, setDestinationUrl] = useState('');
+  const { getActiveAdsByPosition } = useAdManager();
+  const middleAds = getActiveAdsByPosition('middle');
   
   useEffect(() => {
     // Extract the destination URL from query parameters
@@ -66,6 +70,14 @@ const InitialRedirect = () => {
         
         {loadingComplete && (
           <div className="space-y-8 animate-fade-in">
+            {middleAds.length > 0 && (
+              <div className="my-4">
+                {middleAds.map(ad => (
+                  <AdUnit key={ad.id} code={ad.code} />
+                ))}
+              </div>
+            )}
+            
             <CountdownTimer 
               seconds={10} 
               onComplete={handleTimerComplete}

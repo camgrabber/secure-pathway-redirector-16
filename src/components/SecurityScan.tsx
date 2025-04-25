@@ -1,6 +1,8 @@
 
 import React, { useEffect, useState } from 'react';
 import { Shield, CheckCircle, AlertCircle } from 'lucide-react';
+import AdUnit from './AdUnit';
+import { useAdManager } from '../utils/adManager';
 
 interface SecurityScanProps {
   durationMs: number;
@@ -15,6 +17,8 @@ const SecurityScan: React.FC<SecurityScanProps> = ({
 }) => {
   const [currentCheck, setCurrentCheck] = useState(0);
   const [checkResults, setCheckResults] = useState<boolean[]>([]);
+  const { getActiveAdsByPosition } = useAdManager();
+  const middleAds = getActiveAdsByPosition('middle');
   
   const securityChecks = [
     "Checking URL validity",
@@ -42,8 +46,6 @@ const SecurityScan: React.FC<SecurityScanProps> = ({
 
     return () => clearTimeout(timeout);
   }, [currentCheck, durationMs, onComplete, checkResults]);
-
-  const urlDisplay = url?.replace(/^https?:\/\//i, '').substring(0, 30);
   
   return (
     <div className="space-y-8">
@@ -52,8 +54,17 @@ const SecurityScan: React.FC<SecurityScanProps> = ({
           <Shield className="w-10 h-10 text-redirector-primary animate-pulse" />
         </div>
         <h3 className="text-xl font-semibold mb-2">Security Scan in Progress</h3>
-        <p className="text-gray-500">Verifying the safety of <span className="font-medium text-redirector-dark">{urlDisplay}</span></p>
+        <p className="text-gray-500">Verifying link safety</p>
       </div>
+      
+      {/* Middle ad placement */}
+      {middleAds.length > 0 && (
+        <div className="my-6">
+          {middleAds.map(ad => (
+            <AdUnit key={ad.id} code={ad.code} />
+          ))}
+        </div>
+      )}
       
       <div className="space-y-4">
         {securityChecks.map((check, index) => {

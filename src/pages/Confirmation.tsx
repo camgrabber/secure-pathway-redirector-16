@@ -6,13 +6,16 @@ import RedirectLayout from '../components/RedirectLayout';
 import CountdownTimer from '../components/CountdownTimer';
 import { Button } from '../components/ui/button';
 import { useToast } from '../hooks/use-toast';
+import AdUnit from '../components/AdUnit';
+import { useAdManager } from '../utils/adManager';
 
 const Confirmation = () => {
   const location = useLocation();
   const { toast } = useToast();
   const [timerComplete, setTimerComplete] = useState(false);
   const [destinationUrl, setDestinationUrl] = useState('');
-  const [displayUrl, setDisplayUrl] = useState('');
+  const { getActiveAdsByPosition } = useAdManager();
+  const afterTimerAds = getActiveAdsByPosition('after-timer');
   
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -22,23 +25,12 @@ const Confirmation = () => {
       try {
         const decoded = decodeURIComponent(url);
         setDestinationUrl(decoded);
-        
-        // Create a display version of the URL (shortened if necessary)
-        const urlObj = new URL(decoded);
-        const hostname = urlObj.hostname;
-        const path = urlObj.pathname.length > 15 
-          ? urlObj.pathname.substring(0, 15) + '...' 
-          : urlObj.pathname;
-          
-        setDisplayUrl(`${hostname}${path}`);
       } catch (e) {
         console.error('Invalid URL:', e);
         setDestinationUrl('https://example.com');
-        setDisplayUrl('example.com');
       }
     } else {
       setDestinationUrl('https://example.com');
-      setDisplayUrl('example.com');
     }
   }, [location.search]);
 
@@ -55,7 +47,7 @@ const Confirmation = () => {
     navigator.clipboard.writeText(destinationUrl)
       .then(() => {
         toast({
-          title: 'URL Copied',
+          title: 'Link Copied',
           description: 'Link copied to clipboard successfully',
         });
       })
@@ -84,8 +76,8 @@ const Confirmation = () => {
           
           <div className="bg-gray-50 p-4 rounded-lg mt-4 mb-6">
             <p className="text-sm text-gray-500 mb-1">You are being redirected to:</p>
-            <p className="font-medium text-lg text-redirector-dark break-all">
-              {displayUrl}
+            <p className="font-medium text-lg text-redirector-dark">
+              Secure Verified Link
             </p>
           </div>
         </div>
@@ -98,6 +90,14 @@ const Confirmation = () => {
           />
         ) : (
           <div className="flex flex-col gap-4 animate-fade-in">
+            {afterTimerAds.length > 0 && (
+              <div className="my-4">
+                {afterTimerAds.map(ad => (
+                  <AdUnit key={ad.id} code={ad.code} />
+                ))}
+              </div>
+            )}
+            
             <Button 
               onClick={handleRedirect}
               className="px-8 py-6 text-lg bg-gradient-to-r from-redirector-primary to-redirector-secondary hover:opacity-90 transition-opacity animate-scale"

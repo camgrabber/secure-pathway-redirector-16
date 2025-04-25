@@ -9,6 +9,7 @@ import InitialRedirect from "./pages/InitialRedirect";
 import SecurityCheck from "./pages/SecurityCheck";
 import Confirmation from "./pages/Confirmation";
 import NotFound from "./pages/NotFound";
+import Admin from "./pages/Admin";
 
 const queryClient = new QueryClient();
 
@@ -23,6 +24,7 @@ const App = () => (
           <Route path="/initial-redirect" element={<InitialRedirect />} />
           <Route path="/security-check" element={<SecurityCheck />} />
           <Route path="/confirmation" element={<Confirmation />} />
+          <Route path="/admin" element={<Admin />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
