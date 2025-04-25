@@ -23,15 +23,26 @@ const App = () => {
   useEffect(() => {
     const detectAdBlocker = async () => {
       try {
-        console.log("Starting adblock detection check...");
-        // Run the check multiple times to improve reliability
-        const check1 = await checkForAdBlocker();
-        await new Promise(resolve => setTimeout(resolve, 500));
-        const check2 = await checkForAdBlocker();
+        console.log("Starting enhanced adblock detection check...");
         
-        const isBlocked = check1 || check2;
-        console.log(`Adblock detection result: ${isBlocked ? "BLOCKED" : "NOT BLOCKED"}`);
-        setAdBlockerDetected(isBlocked);
+        // First check - immediate
+        const initialCheck = await checkForAdBlocker();
+        
+        // If initial check detects an adblocker, no need for second check
+        if (initialCheck) {
+          console.log("Adblock detected on initial check");
+          setAdBlockerDetected(true);
+          setCheckComplete(true);
+          return;
+        }
+        
+        // Second check with delay - some adblockers take time to activate
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        const secondCheck = await checkForAdBlocker();
+        
+        // Set the final result
+        setAdBlockerDetected(initialCheck || secondCheck);
+        console.log(`Adblock final detection result: ${initialCheck || secondCheck ? "BLOCKED" : "NOT BLOCKED"}`);
       } catch (error) {
         console.error("Error in adblock detection:", error);
         setAdBlockerDetected(true); // Assume blocked on error
@@ -44,17 +55,21 @@ const App = () => {
     
     // Re-check periodically in case adblocker is activated after initial load
     const intervalCheck = setInterval(async () => {
-      if (!adBlockerDetected) {
-        const isBlocked = await checkForAdBlocker();
-        if (isBlocked) {
-          console.log("Adblock detected during interval check");
-          setAdBlockerDetected(true);
+      try {
+        if (!adBlockerDetected) {
+          const isBlocked = await checkForAdBlocker();
+          if (isBlocked) {
+            console.log("Adblock detected during interval check");
+            setAdBlockerDetected(true);
+          }
         }
+      } catch (error) {
+        console.error("Error in interval adblock check:", error);
       }
-    }, 30000); // Check every 30 seconds
+    }, 15000); // Check every 15 seconds (reduced from 30)
     
     return () => clearInterval(intervalCheck);
-  }, []);
+  }, [adBlockerDetected]);
 
   if (adBlockerDetected === true) {
     return <AdBlockerDetected />;
