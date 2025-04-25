@@ -188,14 +188,19 @@ const Admin = () => {
     const formData = new FormData(formElement);
     const updates: Record<string, string | number> = {};
     
-    // Convert form data to settings object
+    // Convert form data to settings object with proper type handling
     formData.forEach((value, key) => {
+      // Skip File objects - we're not handling file uploads in settings
+      if (value instanceof File) {
+        return;
+      }
+      
       // Convert numeric values
       if (key.includes('Seconds') || key.includes('Duration')) {
         const numValue = parseInt(value as string, 10);
         updates[key] = isNaN(numValue) ? 0 : numValue;
       } else {
-        updates[key] = value;
+        updates[key] = value as string;
       }
     });
     
