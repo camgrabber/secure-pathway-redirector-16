@@ -3,6 +3,7 @@ import React from 'react';
 import { ShieldCheck } from 'lucide-react';
 import AdUnit from './AdUnit';
 import { useAdManager } from '../utils/adManager';
+import { useSettingsManager } from '../utils/settingsManager';
 
 interface RedirectLayoutProps {
   children: React.ReactNode;
@@ -16,6 +17,8 @@ const RedirectLayout: React.FC<RedirectLayoutProps> = ({
   subtitle 
 }) => {
   const { getActiveAdsByPosition } = useAdManager();
+  const { settings } = useSettingsManager();
+  
   const topAds = getActiveAdsByPosition('top');
   const middleAds = getActiveAdsByPosition('middle');
   const bottomAds = getActiveAdsByPosition('bottom');
@@ -54,7 +57,7 @@ const RedirectLayout: React.FC<RedirectLayoutProps> = ({
         <div className="px-6 pb-6">
           <div className="security-badge">
             <ShieldCheck className="text-redirector-success" />
-            <span>100% Secure Redirection Service</span>
+            <span>{settings.securityBadgeText}</span>
           </div>
           
           {/* Bottom ad placement */}
@@ -73,7 +76,7 @@ const RedirectLayout: React.FC<RedirectLayoutProps> = ({
       </div>
       
       <div className="mt-4 text-xs text-gray-400">
-        © {new Date().getFullYear()} Secure Pathway Redirector. All rights reserved.
+        {settings.footerText}
       </div>
     </div>
   );

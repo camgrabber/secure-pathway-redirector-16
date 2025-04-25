@@ -5,15 +5,17 @@ import { Shield, ExternalLink } from 'lucide-react';
 import RedirectLayout from '../components/RedirectLayout';
 import SecurityScan from '../components/SecurityScan';
 import { Button } from '../components/ui/button';
+import { useSettingsManager } from '../utils/settingsManager';
 
 const SecurityCheck = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [scanComplete, setScanComplete] = useState(false);
   const [isSecure, setIsSecure] = useState(false);
+  const { settings } = useSettingsManager();
   
   const params = new URLSearchParams(location.search);
-  const destinationUrl = params.get('url') || 'https://example.com';
+  const destinationUrl = params.get('url') || settings.defaultDestinationUrl;
   
   const handleScanComplete = (securityResult: boolean) => {
     setScanComplete(true);
@@ -27,13 +29,13 @@ const SecurityCheck = () => {
   
   return (
     <RedirectLayout
-      title="Security Verification"
-      subtitle="We're checking this link for your safety"
+      title={settings.securityTitle}
+      subtitle={settings.securitySubtitle}
     >
       <div className="space-y-8 py-4">
         {!scanComplete ? (
           <SecurityScan 
-            durationMs={8000}
+            durationMs={settings.securityScanDurationMs}
             onComplete={handleScanComplete}
             url={destinationUrl}
           />
@@ -62,7 +64,7 @@ const SecurityCheck = () => {
               } hover:opacity-90 transition-opacity`}
             >
               <ExternalLink className="mr-2 h-5 w-5" />
-              Proceed to Final Step
+              {settings.securityButtonText}
             </Button>
           </div>
         )}

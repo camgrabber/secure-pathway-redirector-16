@@ -8,6 +8,7 @@ import { Button } from '../components/ui/button';
 import { useToast } from '../hooks/use-toast';
 import AdUnit from '../components/AdUnit';
 import { useAdManager } from '../utils/adManager';
+import { useSettingsManager } from '../utils/settingsManager';
 
 const Confirmation = () => {
   const location = useLocation();
@@ -15,6 +16,7 @@ const Confirmation = () => {
   const [timerComplete, setTimerComplete] = useState(false);
   const [destinationUrl, setDestinationUrl] = useState('');
   const { getActiveAdsByPosition } = useAdManager();
+  const { settings } = useSettingsManager();
   const afterTimerAds = getActiveAdsByPosition('after-timer');
   
   useEffect(() => {
@@ -27,12 +29,12 @@ const Confirmation = () => {
         setDestinationUrl(decoded);
       } catch (e) {
         console.error('Invalid URL:', e);
-        setDestinationUrl('https://example.com');
+        setDestinationUrl(settings.defaultDestinationUrl);
       }
     } else {
-      setDestinationUrl('https://example.com');
+      setDestinationUrl(settings.defaultDestinationUrl);
     }
-  }, [location.search]);
+  }, [location.search, settings.defaultDestinationUrl]);
 
   const handleTimerComplete = () => {
     setTimerComplete(true);
@@ -63,8 +65,8 @@ const Confirmation = () => {
 
   return (
     <RedirectLayout
-      title="Ready to Proceed"
-      subtitle="Your link is ready for access"
+      title={settings.confirmationTitle}
+      subtitle={settings.confirmationSubtitle}
     >
       <div className="space-y-8 py-4">
         <div className="text-center">
@@ -84,7 +86,7 @@ const Confirmation = () => {
         
         {!timerComplete ? (
           <CountdownTimer 
-            seconds={5}
+            seconds={settings.confirmationTimerSeconds}
             onComplete={handleTimerComplete}
             showCheckOnComplete={false}
           />
@@ -103,7 +105,7 @@ const Confirmation = () => {
               className="px-8 py-6 text-lg bg-gradient-to-r from-redirector-primary to-redirector-secondary hover:opacity-90 transition-opacity animate-scale"
             >
               <ExternalLink className="mr-2 h-5 w-5" />
-              Proceed to Destination
+              {settings.confirmationButtonText}
             </Button>
             
             <Button 
@@ -112,7 +114,7 @@ const Confirmation = () => {
               className="px-8 py-4"
             >
               <Link className="mr-2 h-4 w-4" />
-              Copy Link
+              {settings.copyLinkButtonText}
             </Button>
           </div>
         )}

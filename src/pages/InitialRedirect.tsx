@@ -9,6 +9,7 @@ import { Button } from '../components/ui/button';
 import { useToast } from '../hooks/use-toast';
 import AdUnit from '../components/AdUnit';
 import { useAdManager } from '../utils/adManager';
+import { useSettingsManager } from '../utils/settingsManager';
 
 const InitialRedirect = () => {
   const navigate = useNavigate();
@@ -18,6 +19,7 @@ const InitialRedirect = () => {
   const [timerComplete, setTimerComplete] = useState(false);
   const [destinationUrl, setDestinationUrl] = useState('');
   const { getActiveAdsByPosition } = useAdManager();
+  const { settings } = useSettingsManager();
   const middleAds = getActiveAdsByPosition('middle');
   
   useEffect(() => {
@@ -36,12 +38,13 @@ const InitialRedirect = () => {
           description: 'Invalid URL parameter provided.',
           variant: 'destructive',
         });
+        setDestinationUrl(settings.defaultDestinationUrl);
       }
     } else {
       // Default URL if none provided
-      setDestinationUrl('https://example.com');
+      setDestinationUrl(settings.defaultDestinationUrl);
     }
-  }, [location.search, toast]);
+  }, [location.search, toast, settings.defaultDestinationUrl]);
 
   const handleProgressComplete = () => {
     setLoadingComplete(true);
@@ -58,8 +61,8 @@ const InitialRedirect = () => {
 
   return (
     <RedirectLayout 
-      title="Wait For Secure Link" 
-      subtitle="Your secure link is just moments away"
+      title={settings.initialTitle} 
+      subtitle={settings.initialSubtitle}
     >
       <div className="space-y-8">
         <ProgressBar 
@@ -79,7 +82,7 @@ const InitialRedirect = () => {
             )}
             
             <CountdownTimer 
-              seconds={10} 
+              seconds={settings.initialTimerSeconds} 
               onComplete={handleTimerComplete}
             />
             
@@ -90,7 +93,7 @@ const InitialRedirect = () => {
                   className="px-8 py-6 text-lg bg-gradient-to-r from-redirector-primary to-redirector-primary-dark hover:opacity-90 transition-opacity animate-pulse"
                 >
                   <ExternalLink className="mr-2 h-5 w-5" />
-                  Continue to Security Check
+                  {settings.initialButtonText}
                 </Button>
               </div>
             )}
