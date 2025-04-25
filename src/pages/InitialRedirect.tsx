@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ExternalLink } from 'lucide-react';
@@ -22,25 +23,28 @@ const InitialRedirect = () => {
   const middleAds = getActiveAdsByPosition('middle');
   
   useEffect(() => {
-    // Extract the destination URL from state or use default
-    const stateUrl = location.state?.url;
+    // Extract the destination URL from query parameters
+    const params = new URLSearchParams(location.search);
+    const url = params.get('url');
     
-    if (stateUrl) {
+    if (url) {
       try {
-        setDestinationUrl(stateUrl);
+        // Store the decoded URL
+        setDestinationUrl(decodeURIComponent(url));
       } catch (e) {
-        console.error('Invalid URL:', e);
+        console.error('Invalid URL parameter:', e);
         toast({
           title: 'Error',
-          description: 'Invalid URL provided.',
+          description: 'Invalid URL parameter provided.',
           variant: 'destructive',
         });
         setDestinationUrl(settings.defaultDestinationUrl);
       }
     } else {
+      // Default URL if none provided
       setDestinationUrl(settings.defaultDestinationUrl);
     }
-  }, [location.state, toast, settings.defaultDestinationUrl]);
+  }, [location.search, toast, settings.defaultDestinationUrl]);
 
   const handleProgressComplete = () => {
     setLoadingComplete(true);
@@ -51,8 +55,8 @@ const InitialRedirect = () => {
   };
 
   const handleContinue = () => {
-    // Use state to pass the URL instead of query parameters
-    navigate('/security-check', { state: { url: destinationUrl } });
+    // Navigate to security check page and pass the destination URL
+    navigate(`/security-check?url=${encodeURIComponent(destinationUrl)}`);
   };
 
   return (

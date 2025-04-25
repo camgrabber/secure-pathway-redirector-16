@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Shield, ExternalLink } from 'lucide-react';
@@ -13,7 +14,8 @@ const SecurityCheck = () => {
   const [isSecure, setIsSecure] = useState(false);
   const { settings } = useSettingsManager();
   
-  const destinationUrl = location.state?.url || settings.defaultDestinationUrl;
+  const params = new URLSearchParams(location.search);
+  const destinationUrl = params.get('url') || settings.defaultDestinationUrl;
   
   const handleScanComplete = (securityResult: boolean) => {
     setScanComplete(true);
@@ -21,8 +23,8 @@ const SecurityCheck = () => {
   };
   
   const handleContinue = () => {
-    // Pass URL through state
-    navigate('/confirmation', { state: { url: destinationUrl } });
+    // Navigate to final confirmation page
+    navigate(`/confirmation?url=${encodeURIComponent(destinationUrl)}`);
   };
   
   return (
