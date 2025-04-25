@@ -1,31 +1,47 @@
 
-// Enhanced ad blocker detection with multiple detection methods
+// Enhanced ad blocker detection with multiple reliable detection methods
 export const checkForAdBlocker = async (): Promise<boolean> => {
   try {
-    // Method 1: Create a bait element
+    // Method 1: Create and check a bait element
     const testAd = document.createElement('div');
     testAd.innerHTML = '&nbsp;';
-    testAd.className = 'adsbox ad-element';
+    testAd.className = 'adsbox ad-slot ad-banner googlead adsense advert';
     document.body.appendChild(testAd);
     
-    // Method 2: Try to load a "bait" script
-    const baitScript = document.createElement('script');
-    baitScript.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js';
-    baitScript.async = true;
-    document.head.appendChild(baitScript);
+    // Method 2: Try to fetch a known ad script URL
+    const fetchPromise = fetch('https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js', { 
+      method: 'HEAD',
+      mode: 'no-cors',
+      cache: 'no-cache',
+      signal: AbortSignal.timeout(2000)
+    }).catch(() => {
+      console.log('Ad fetch blocked - adblock detected');
+      return null;
+    });
     
-    // Wait for adblockers to process the elements
+    // Method 3: Check for common ad blocker extensions
+    const hasAdBlockStyle = !!document.getElementById('AdBlocker-detector') ||
+                          !!document.getElementById('AdBlock-detector') ||
+                          !!document.getElementById('AdBlocker-notification');
+    
+    // Wait a moment for adblockers to process the elements
     await new Promise(resolve => setTimeout(resolve, 100));
+    await Promise.race([fetchPromise, new Promise(r => setTimeout(r, 2000))]);
     
-    // Check if our test ad was hidden or removed
-    const isBlockedByHeight = testAd.offsetHeight === 0;
-    const isBlockedByDisplay = window.getComputedStyle(testAd).display === 'none';
+    // Check if our test ad was hidden, removed, or modified
+    const isAdHidden = !testAd.offsetHeight || 
+                      window.getComputedStyle(testAd).display === 'none' || 
+                      window.getComputedStyle(testAd).visibility === 'hidden';
     
     // Clean up
-    document.body.removeChild(testAd);
-    document.head.removeChild(baitScript);
+    if (document.body.contains(testAd)) {
+      document.body.removeChild(testAd);
+    }
     
-    return isBlockedByHeight || isBlockedByDisplay;
+    // Log results for debugging
+    console.log(`AdBlock detection results - Hidden ad: ${isAdHidden}, AdBlock styles: ${hasAdBlockStyle}`);
+    
+    return isAdHidden || hasAdBlockStyle;
   } catch (e) {
     console.error('Error checking for ad blocker:', e);
     return true; // Assume blocker exists if there's an error

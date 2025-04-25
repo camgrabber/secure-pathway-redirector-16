@@ -18,22 +18,50 @@ const queryClient = new QueryClient();
 
 const App = () => {
   const [adBlockerDetected, setAdBlockerDetected] = useState<boolean | null>(null);
+  const [checkComplete, setCheckComplete] = useState(false);
 
   useEffect(() => {
     const detectAdBlocker = async () => {
-      const isBlocked = await checkForAdBlocker();
-      setAdBlockerDetected(isBlocked);
+      try {
+        console.log("Starting adblock detection check...");
+        // Run the check multiple times to improve reliability
+        const check1 = await checkForAdBlocker();
+        await new Promise(resolve => setTimeout(resolve, 500));
+        const check2 = await checkForAdBlocker();
+        
+        const isBlocked = check1 || check2;
+        console.log(`Adblock detection result: ${isBlocked ? "BLOCKED" : "NOT BLOCKED"}`);
+        setAdBlockerDetected(isBlocked);
+      } catch (error) {
+        console.error("Error in adblock detection:", error);
+        setAdBlockerDetected(true); // Assume blocked on error
+      } finally {
+        setCheckComplete(true);
+      }
     };
 
     detectAdBlocker();
+    
+    // Re-check periodically in case adblocker is activated after initial load
+    const intervalCheck = setInterval(async () => {
+      if (!adBlockerDetected) {
+        const isBlocked = await checkForAdBlocker();
+        if (isBlocked) {
+          console.log("Adblock detected during interval check");
+          setAdBlockerDetected(true);
+        }
+      }
+    }, 30000); // Check every 30 seconds
+    
+    return () => clearInterval(intervalCheck);
   }, []);
 
   if (adBlockerDetected === true) {
     return <AdBlockerDetected />;
   }
 
-  // Only render the app when we've confirmed no adblocker is present
-  if (adBlockerDetected === false) {
+  // Only render the app when we've confirmed no adblocker is present and check is complete
+  if (checkComplete && adBlockerDetected === false) {
     return (
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
@@ -59,7 +87,8 @@ const App = () => {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-200">
       <div className="text-center">
         <div className="w-12 h-12 border-4 border-redirector-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-        <p className="text-lg font-medium text-gray-600">Loading...</p>
+        <p className="text-lg font-medium text-gray-600">Initializing secure pathway...</p>
+        <p className="text-sm text-gray-500 mt-2">Please wait while we verify your browser compatibility</p>
       </div>
     </div>
   );
