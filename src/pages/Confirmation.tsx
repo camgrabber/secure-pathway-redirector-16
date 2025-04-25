@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Check, ExternalLink, Link } from 'lucide-react';
@@ -20,13 +19,11 @@ const Confirmation = () => {
   const afterTimerAds = getActiveAdsByPosition('after-timer');
   
   useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const url = params.get('url');
+    const stateUrl = location.state?.url;
     
-    if (url) {
+    if (stateUrl) {
       try {
-        const decoded = decodeURIComponent(url);
-        setDestinationUrl(decoded);
+        setDestinationUrl(stateUrl);
       } catch (e) {
         console.error('Invalid URL:', e);
         setDestinationUrl(settings.defaultDestinationUrl);
@@ -34,7 +31,7 @@ const Confirmation = () => {
     } else {
       setDestinationUrl(settings.defaultDestinationUrl);
     }
-  }, [location.search, settings.defaultDestinationUrl]);
+  }, [location.state, settings.defaultDestinationUrl]);
 
   const handleTimerComplete = () => {
     setTimerComplete(true);
