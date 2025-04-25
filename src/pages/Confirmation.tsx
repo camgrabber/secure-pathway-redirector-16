@@ -91,9 +91,9 @@ const Confirmation = () => {
         ) : (
           <div className="flex flex-col gap-4 animate-fade-in">
             {afterTimerAds.length > 0 && (
-              <div className="my-4">
+              <div className="after-timer-ads">
                 {afterTimerAds.map(ad => (
-                  <AdUnit key={ad.id} code={ad.code} />
+                  <AdUnit key={ad.id} code={ad.code} position="after-timer" />
                 ))}
               </div>
             )}

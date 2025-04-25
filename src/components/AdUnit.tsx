@@ -4,9 +4,10 @@ import React, { useEffect, useRef } from 'react';
 interface AdUnitProps {
   code: string;
   className?: string;
+  position?: 'top' | 'middle' | 'bottom' | 'after-timer';
 }
 
-const AdUnit: React.FC<AdUnitProps> = ({ code, className = "" }) => {
+const AdUnit: React.FC<AdUnitProps> = ({ code, className = "", position = "middle" }) => {
   const adRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -36,11 +37,23 @@ const AdUnit: React.FC<AdUnitProps> = ({ code, className = "" }) => {
     });
   }, [code]);
 
+  // Apply different styling based on position
+  const getPositionClass = () => {
+    switch (position) {
+      case 'top': return 'mb-6';
+      case 'middle': return 'my-6';
+      case 'bottom': return 'mt-6';
+      case 'after-timer': return 'my-4';
+      default: return 'my-4';
+    }
+  };
+
   return (
     <div 
       ref={adRef} 
-      className={`ad-container w-full my-4 overflow-hidden ${className}`}
+      className={`ad-container w-full overflow-hidden border border-gray-200 rounded-lg bg-gray-50 ${getPositionClass()} ${className}`}
       data-testid="ad-unit"
+      data-ad-position={position}
     />
   );
 };
