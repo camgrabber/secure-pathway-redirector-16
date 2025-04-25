@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { ShieldCheck } from 'lucide-react';
 import AdUnit from './AdUnit';
 import { useAdManager } from '../utils/adManager';
@@ -23,6 +23,13 @@ const RedirectLayout: React.FC<RedirectLayoutProps> = ({
   const middleAds = getActiveAdsByPosition('middle');
   const bottomAds = getActiveAdsByPosition('bottom');
   
+  useEffect(() => {
+    // Log active ads for debugging purposes
+    console.log('Top ads:', topAds);
+    console.log('Middle ads:', middleAds);
+    console.log('Bottom ads:', bottomAds);
+  }, [topAds, middleAds, bottomAds]);
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4 py-12">
       <div className="card-container w-full max-w-xl bg-white rounded-xl overflow-hidden shadow-lg">
