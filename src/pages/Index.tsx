@@ -2,14 +2,14 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-// This page will simply redirect to the initial redirect page
 const Index = () => {
   const navigate = useNavigate();
   
   useEffect(() => {
-    // Redirect to the initial redirect page with a default URL
-    // In a real application, you might want to read the URL from query parameters
-    navigate('/initial-redirect?url=' + encodeURIComponent('https://example.com'));
+    // Use state to pass the URL instead of query parameters
+    navigate('/initial-redirect', {
+      state: { url: 'https://example.com' }
+    });
   }, [navigate]);
   
   return (
