@@ -8,7 +8,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Switch } from '@/components/ui/switch';
-import { FormItem, FormLabel, FormControl } from '@/components/ui/form';
 
 interface SocialLink {
   id: string;
@@ -111,15 +110,14 @@ export const SocialLinksManager = () => {
                   {link.platform}
                 </Label>
                 
-                <FormItem className="flex items-center space-x-2 space-y-0">
-                  <FormLabel>Active</FormLabel>
-                  <FormControl>
-                    <Switch 
-                      checked={link.active} 
-                      onCheckedChange={(checked) => updateSocialLink(link.id, 'active', checked)} 
-                    />
-                  </FormControl>
-                </FormItem>
+                <div className="flex items-center space-x-2">
+                  <Label htmlFor={`${link.platform}-active`} className="mr-2">Active</Label>
+                  <Switch 
+                    id={`${link.platform}-active`}
+                    checked={link.active} 
+                    onCheckedChange={(checked) => updateSocialLink(link.id, 'active', checked)} 
+                  />
+                </div>
               </div>
               
               <Input
