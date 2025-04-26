@@ -1,9 +1,9 @@
-
 import React, { useEffect } from 'react';
 import { ShieldCheck } from 'lucide-react';
 import AdUnit from './AdUnit';
 import { useAdManager } from '../utils/adManager';
 import { useSettingsManager } from '../utils/settingsManager';
+import { SocialButtons } from './SocialButtons';
 
 interface RedirectLayoutProps {
   children: React.ReactNode;
@@ -32,6 +32,7 @@ const RedirectLayout: React.FC<RedirectLayoutProps> = ({
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4 py-12">
+      <SocialButtons />
       <div className="card-container w-full max-w-xl bg-white rounded-xl overflow-hidden shadow-lg">
         <div className="card-header">
           <h1 className="text-2xl md:text-3xl font-bold mb-2">{title}</h1>

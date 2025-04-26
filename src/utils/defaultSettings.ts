@@ -1,4 +1,3 @@
-
 import { AppSettings } from '@/types/settings';
 
 export const defaultSettings: AppSettings = {
@@ -19,5 +18,10 @@ export const defaultSettings: AppSettings = {
   copyLinkButtonText: "Copy Link",
   securityBadgeText: "100% Secure Redirection Service",
   footerText: `© ${new Date().getFullYear()} Secure Pathway Redirector. All rights reserved.`,
-  defaultDestinationUrl: "https://example.com"
+  defaultDestinationUrl: "https://example.com",
+  
+  // Social media URLs
+  whatsappUrl: "",
+  instagramUrl: "",
+  twitterUrl: ""
 };

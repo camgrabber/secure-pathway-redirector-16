@@ -11,7 +11,6 @@ export const ContentTab = () => {
   const { toast } = useToast();
   const { settings, updateSettings, refreshSettings } = useSettingsManager();
 
-  // Refresh settings when component mounts to ensure we have latest data
   useEffect(() => {
     console.log("ContentTab: Refreshing settings on mount");
     refreshSettings();
@@ -33,7 +32,6 @@ export const ContentTab = () => {
       const result = await updateSettings(updates);
       
       if (result && result.success) {
-        // After successful update, refresh settings to ensure UI is consistent
         console.log(`ContentTab: ${section} settings saved successfully, refreshing`);
         await refreshSettings();
         
@@ -197,6 +195,51 @@ export const ContentTab = () => {
             <Button type="button" onClick={() => handleSaveSettings('labels')} className="mt-2">
               <Save className="mr-2 h-4 w-4" />
               Save Labels
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardHeader>
+          <CardTitle>Social Media Links</CardTitle>
+          <CardDescription>Configure your social media button links</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form id="social-form" className="grid gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="whatsappUrl">WhatsApp Link</Label>
+              <Input
+                id="whatsappUrl"
+                name="whatsappUrl"
+                defaultValue={settings.whatsappUrl}
+                placeholder="https://wa.me/yourphonenumber"
+              />
+            </div>
+            
+            <div className="grid gap-2">
+              <Label htmlFor="instagramUrl">Instagram Profile</Label>
+              <Input
+                id="instagramUrl"
+                name="instagramUrl"
+                defaultValue={settings.instagramUrl}
+                placeholder="https://instagram.com/yourusername"
+              />
+            </div>
+            
+            <div className="grid gap-2">
+              <Label htmlFor="twitterUrl">X (Twitter) Profile</Label>
+              <Input
+                id="twitterUrl"
+                name="twitterUrl"
+                defaultValue={settings.twitterUrl}
+                placeholder="https://x.com/yourusername"
+              />
+            </div>
+            
+            <Button type="button" onClick={() => handleSaveSettings('social')} className="mt-2">
+              <Save className="mr-2 h-4 w-4" />
+              Save Social Links
             </Button>
           </form>
         </CardContent>

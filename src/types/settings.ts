@@ -31,6 +31,11 @@ export interface AppSettings {
   
   // Default destination
   defaultDestinationUrl: string;
+  
+  // Social media URLs
+  whatsappUrl: string;
+  instagramUrl: string;
+  twitterUrl: string;
 }
 
 export const SETTINGS_ID = 'app_settings';
