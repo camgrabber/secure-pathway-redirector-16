@@ -9,7 +9,7 @@ export const SocialButtons = () => {
   const { settings } = useSettingsManager();
 
   return (
-    <div className="fixed right-4 bottom-4 flex flex-col gap-4 z-50 items-center">
+    <div className="fixed right-4 top-1/2 -translate-y-1/2 flex flex-col gap-4 z-50 items-center">
       <WhatsAppButton url={settings.whatsappUrl} />
       <InstagramButton url={settings.instagramUrl} />
       <TwitterButton url={settings.twitterUrl} />
