@@ -38,6 +38,28 @@ export interface AppSettings {
 
 const SETTINGS_ID = 'app_settings';
 
+// Default settings as fallback
+const defaultSettings: AppSettings = {
+  adminUsername: "admin",
+  adminPassword: "admin123",
+  initialTitle: "Wait For Secure Link",
+  initialSubtitle: "Your secure link is just moments away",
+  securityTitle: "Security Verification",
+  securitySubtitle: "We're checking this link for your safety",
+  confirmationTitle: "Ready to Proceed",
+  confirmationSubtitle: "Your link is ready for access",
+  initialTimerSeconds: 10,
+  securityScanDurationMs: 8000,
+  confirmationTimerSeconds: 5,
+  initialButtonText: "Continue to Security Check",
+  securityButtonText: "Proceed to Final Step",
+  confirmationButtonText: "Proceed to Destination",
+  copyLinkButtonText: "Copy Link",
+  securityBadgeText: "100% Secure Redirection Service",
+  footerText: `© ${new Date().getFullYear()} Secure Pathway Redirector. All rights reserved.`,
+  defaultDestinationUrl: "https://example.com"
+};
+
 export const useSettingsManager = () => {
   const [settings, setSettings] = useState<AppSettings | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
@@ -46,25 +68,40 @@ export const useSettingsManager = () => {
   useEffect(() => {
     const loadSettings = async () => {
       try {
+        console.log("Loading app settings from Supabase...");
         const { data, error } = await supabase
           .from('app_settings')
           .select('setting_value')
           .eq('id', SETTINGS_ID)
           .single();
         
-        if (error) throw error;
+        if (error) {
+          console.error("Failed to load settings:", error);
+          // Use default settings on error
+          console.log("Using default settings as fallback");
+          setSettings(defaultSettings);
+          throw error;
+        }
         
         // Properly type assert the JSON data to our AppSettings type
         const settingsData = data.setting_value as unknown as AppSettings;
         
         // Validate that required fields exist
         if (!settingsData || typeof settingsData !== 'object') {
+          console.error("Invalid settings data format");
+          // Use default settings on invalid format
+          setSettings(defaultSettings);
           throw new Error('Invalid settings data format');
         }
         
+        console.log("Settings loaded successfully");
         setSettings(settingsData);
       } catch (e) {
         console.error('Failed to load settings:', e);
+        // Ensure we always have settings by using defaults if needed
+        if (!settings) {
+          setSettings(defaultSettings);
+        }
       } finally {
         setIsLoaded(true);
       }
@@ -102,6 +139,7 @@ export const useSettingsManager = () => {
       
       if (error) throw error;
       setSettings(updatedSettings);
+      console.log("Settings updated successfully", updates);
     } catch (e) {
       console.error('Failed to update settings:', e);
       throw e;
@@ -114,30 +152,13 @@ export const useSettingsManager = () => {
       const { error } = await supabase
         .from('app_settings')
         .update({
-          setting_value: {
-            adminUsername: "admin",
-            adminPassword: "admin123",
-            initialTitle: "Wait For Secure Link",
-            initialSubtitle: "Your secure link is just moments away",
-            securityTitle: "Security Verification",
-            securitySubtitle: "We're checking this link for your safety",
-            confirmationTitle: "Ready to Proceed",
-            confirmationSubtitle: "Your link is ready for access",
-            initialTimerSeconds: 10,
-            securityScanDurationMs: 8000,
-            confirmationTimerSeconds: 5,
-            initialButtonText: "Continue to Security Check",
-            securityButtonText: "Proceed to Final Step",
-            confirmationButtonText: "Proceed to Destination",
-            copyLinkButtonText: "Copy Link",
-            securityBadgeText: "100% Secure Redirection Service",
-            footerText: `© ${new Date().getFullYear()} Secure Pathway Redirector. All rights reserved.`,
-            defaultDestinationUrl: "https://example.com"
-          }
+          setting_value: defaultSettings
         })
         .eq('id', SETTINGS_ID);
       
       if (error) throw error;
+      setSettings(defaultSettings);
+      console.log("Settings reset to defaults");
     } catch (e) {
       console.error('Failed to reset settings:', e);
       throw e;
@@ -146,12 +167,17 @@ export const useSettingsManager = () => {
   
   // Verify admin credentials
   const verifyAdminCredentials = (username: string, password: string): boolean => {
-    if (!settings) return false;
-    return username === settings.adminUsername && password === settings.adminPassword;
+    // If settings aren't loaded yet, use default credentials
+    const settingsToUse = settings || defaultSettings;
+    
+    console.log("Verifying credentials against:", settingsToUse.adminUsername);
+    const isValid = username === settingsToUse.adminUsername && password === settingsToUse.adminPassword;
+    
+    return isValid;
   };
   
   return {
-    settings: settings || {} as AppSettings, // Provide empty object as fallback
+    settings: settings || defaultSettings, // Provide default settings as fallback
     isLoaded,
     updateSettings,
     resetToDefaults,

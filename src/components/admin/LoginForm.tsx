@@ -13,20 +13,58 @@ interface LoginFormProps {
 
 export const LoginForm = ({ onLoginSuccess }: LoginFormProps) => {
   const [loginForm, setLoginForm] = useState({ username: '', password: '' });
+  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const { verifyAdminCredentials, isLoaded } = useSettingsManager();
+  const { verifyAdminCredentials, isLoaded, settings } = useSettingsManager();
 
   const handleLogin = () => {
-    if (isLoaded && verifyAdminCredentials(loginForm.username, loginForm.password)) {
-      onLoginSuccess();
-      sessionStorage.setItem('adminLoggedIn', 'true');
-    } else {
+    setIsLoading(true);
+    
+    // Basic validation
+    if (!loginForm.username || !loginForm.password) {
       toast({
-        title: 'Authentication Failed',
-        description: 'Incorrect username or password',
+        title: 'Validation Error',
+        description: 'Username and password are required',
         variant: 'destructive',
       });
+      setIsLoading(false);
+      return;
     }
+
+    // Small delay to ensure settings are loaded
+    setTimeout(() => {
+      if (isLoaded) {
+        console.log("Attempting login with credentials:", loginForm.username);
+        console.log("Settings loaded:", !!settings);
+        
+        const isValid = verifyAdminCredentials(loginForm.username, loginForm.password);
+        console.log("Credentials valid:", isValid);
+        
+        if (isValid) {
+          toast({
+            title: 'Login Successful',
+            description: 'Welcome to admin dashboard',
+          });
+          onLoginSuccess();
+          sessionStorage.setItem('adminLoggedIn', 'true');
+        } else {
+          toast({
+            title: 'Authentication Failed',
+            description: 'Incorrect username or password',
+            variant: 'destructive',
+          });
+          console.log("Default credentials are admin/admin123. Please check app settings.");
+        }
+      } else {
+        toast({
+          title: 'System Error',
+          description: 'Settings not loaded yet. Please try again.',
+          variant: 'destructive',
+        });
+        console.error("Settings not loaded yet");
+      }
+      setIsLoading(false);
+    }, 500);
   };
 
   return (
@@ -66,13 +104,22 @@ export const LoginForm = ({ onLoginSuccess }: LoginFormProps) => {
                 }
               }}
             />
+            <p className="text-xs text-gray-500 mt-1">Default: admin/admin123 (if not changed)</p>
           </div>
           
           <Button 
             onClick={handleLogin}
             className="w-full"
+            disabled={isLoading}
           >
-            Login
+            {isLoading ? (
+              <>
+                <span className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
+                Logging in...
+              </>
+            ) : (
+              'Login'
+            )}
           </Button>
           
           <div className="text-center pt-4">

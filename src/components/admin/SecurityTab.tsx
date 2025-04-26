@@ -1,6 +1,6 @@
 
-import React from 'react';
-import { Save, RefreshCw } from 'lucide-react';
+import React, { useState } from 'react';
+import { Save, RefreshCw, Eye, EyeOff, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -11,74 +11,153 @@ import { useSettingsManager } from '@/utils/settingsManager';
 export const SecurityTab = () => {
   const { toast } = useToast();
   const { settings, updateSettings, resetToDefaults: resetSettingsToDefaults } = useSettingsManager();
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [formValues, setFormValues] = useState({
+    adminUsername: settings.adminUsername || '',
+    adminPassword: '',
+    defaultDestinationUrl: settings.defaultDestinationUrl || 'https://example.com'
+  });
 
-  const handleUpdateCredentials = () => {
-    const newUsername = (document.getElementById('adminUsername') as HTMLInputElement)?.value;
-    const newPassword = (document.getElementById('adminPassword') as HTMLInputElement)?.value;
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { id, value } = e.target;
+    setFormValues({
+      ...formValues,
+      [id]: value
+    });
+  };
+
+  const handleUpdateCredentials = async () => {
+    setLoading(true);
     
-    if (!newUsername || !newPassword) {
+    if (!formValues.adminUsername) {
       toast({
         title: 'Validation Error',
-        description: 'Username and password cannot be empty',
+        description: 'Username cannot be empty',
         variant: 'destructive',
       });
+      setLoading(false);
       return;
     }
     
-    if (newPassword.length < 8) {
+    // If password field is empty, don't update password
+    const updates: Record<string, string> = {
+      adminUsername: formValues.adminUsername
+    };
+    
+    // Only update password if it's provided
+    if (formValues.adminPassword) {
+      if (formValues.adminPassword.length < 8) {
+        toast({
+          title: 'Security Warning',
+          description: 'Password should be at least 8 characters long',
+          variant: 'destructive',
+        });
+        setLoading(false);
+        return;
+      }
+      updates.adminPassword = formValues.adminPassword;
+    }
+    
+    try {
+      await updateSettings(updates);
+      
       toast({
-        title: 'Security Warning',
-        description: 'Password should be at least 8 characters long',
+        title: 'Credentials Updated',
+        description: 'Admin credentials have been successfully updated',
+      });
+      
+      // Clear password field after successful update
+      setFormValues({
+        ...formValues,
+        adminPassword: ''
+      });
+    } catch (error) {
+      toast({
+        title: 'Update Failed',
+        description: 'There was a problem updating credentials',
         variant: 'destructive',
       });
-      return;
+      console.error('Failed to update credentials:', error);
+    } finally {
+      setLoading(false);
     }
+  };
+
+  const handleSaveDefaultDestination = async () => {
+    setLoading(true);
     
-    updateSettings({
-      adminUsername: newUsername,
-      adminPassword: newPassword,
-    });
-    
-    toast({
-      title: 'Credentials Updated',
-      description: 'Admin credentials have been successfully updated',
-    });
+    try {
+      // Basic URL validation
+      let url = formValues.defaultDestinationUrl;
+      if (!/^https?:\/\//i.test(url)) {
+        url = 'https://' + url;
+      }
+      
+      await updateSettings({
+        defaultDestinationUrl: url
+      });
+      
+      // Update local form value with potentially modified URL
+      setFormValues({
+        ...formValues,
+        defaultDestinationUrl: url
+      });
+      
+      toast({
+        title: 'Default Destination Updated',
+        description: 'Default destination URL has been saved',
+      });
+    } catch (error) {
+      toast({
+        title: 'Update Failed',
+        description: 'There was a problem updating the default destination',
+        variant: 'destructive',
+      });
+      console.error('Failed to update default destination:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleResetSettingsToDefaults = () => {
     if (window.confirm('Reset all application settings to default? This cannot be undone.')) {
-      resetSettingsToDefaults();
-      toast({
-        title: 'Reset Complete',
-        description: 'Application settings have been reset to defaults',
-      });
+      setLoading(true);
+      resetSettingsToDefaults()
+        .then(() => {
+          toast({
+            title: 'Reset Complete',
+            description: 'Application settings have been reset to defaults',
+          });
+          // Update form values with default settings
+          setFormValues({
+            adminUsername: 'admin',
+            adminPassword: '',
+            defaultDestinationUrl: 'https://example.com'
+          });
+        })
+        .catch((error) => {
+          toast({
+            title: 'Reset Failed',
+            description: 'There was a problem resetting settings',
+            variant: 'destructive',
+          });
+          console.error('Failed to reset settings:', error);
+        })
+        .finally(() => {
+          setLoading(false);
+        });
     }
-  };
-
-  const handleSaveSettings = (section: string) => {
-    const formElement = document.getElementById(`${section}-form`) as HTMLFormElement;
-    if (!formElement) return;
-    
-    const formData = new FormData(formElement);
-    const updates: Record<string, string | number> = {};
-    
-    formData.forEach((value, key) => {
-      updates[key] = value as string;
-    });
-    
-    updateSettings(updates);
-    
-    toast({
-      title: 'Settings Saved',
-      description: `${section.charAt(0).toUpperCase() + section.slice(1)} settings have been updated`,
-    });
   };
 
   return (
     <div className="grid grid-cols-1 gap-6">
       <Card>
         <CardHeader>
-          <CardTitle>Admin Credentials</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <Shield className="h-5 w-5" />
+            Admin Credentials
+          </CardTitle>
           <CardDescription>Change your admin username and password</CardDescription>
         </CardHeader>
         <CardContent>
@@ -88,24 +167,50 @@ export const SecurityTab = () => {
               <Input
                 id="adminUsername"
                 type="text"
-                defaultValue={settings.adminUsername}
+                value={formValues.adminUsername}
+                onChange={handleInputChange}
                 placeholder="Enter new username"
               />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="adminPassword">Password</Label>
-              <Input
-                id="adminPassword"
-                type="password"
-                placeholder="Enter new password"
-              />
+              <div className="relative">
+                <Input
+                  id="adminPassword"
+                  type={showPassword ? "text" : "password"}
+                  value={formValues.adminPassword}
+                  onChange={handleInputChange}
+                  placeholder="Enter new password (leave empty to keep current)"
+                />
+                <button 
+                  type="button"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
               <p className="text-xs text-gray-500">
-                Password should be at least 8 characters long for better security
+                Password should be at least 8 characters long for better security.
+                Leave empty to keep current password.
               </p>
             </div>
-            <Button onClick={handleUpdateCredentials} className="mt-2">
-              <Save className="mr-2 h-4 w-4" />
-              Update Credentials
+            <Button 
+              onClick={handleUpdateCredentials} 
+              className="mt-2"
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <span className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"></span>
+                  Updating...
+                </>
+              ) : (
+                <>
+                  <Save className="mr-2 h-4 w-4" />
+                  Update Credentials
+                </>
+              )}
             </Button>
           </div>
         </CardContent>
@@ -117,22 +222,35 @@ export const SecurityTab = () => {
           <CardDescription>Set the default destination URL when none is provided</CardDescription>
         </CardHeader>
         <CardContent>
-          <form id="defaults-form" className="grid gap-4">
+          <div className="grid gap-4">
             <div className="grid gap-2">
               <Label htmlFor="defaultDestinationUrl">Default Destination URL</Label>
               <Input
                 id="defaultDestinationUrl"
-                name="defaultDestinationUrl"
                 type="url"
-                defaultValue={settings.defaultDestinationUrl}
+                value={formValues.defaultDestinationUrl}
+                onChange={handleInputChange}
                 placeholder="https://example.com"
               />
             </div>
-            <Button type="button" onClick={() => handleSaveSettings('defaults')} className="mt-2">
-              <Save className="mr-2 h-4 w-4" />
-              Save Default Settings
+            <Button 
+              onClick={handleSaveDefaultDestination} 
+              className="mt-2"
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <span className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"></span>
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="mr-2 h-4 w-4" />
+                  Save Default URL
+                </>
+              )}
             </Button>
-          </form>
+          </div>
         </CardContent>
       </Card>
       
@@ -145,9 +263,19 @@ export const SecurityTab = () => {
           <Button 
             variant="destructive"
             onClick={handleResetSettingsToDefaults}
+            disabled={loading}
           >
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Reset All Settings
+            {loading ? (
+              <>
+                <span className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"></span>
+                Resetting...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Reset All Settings
+              </>
+            )}
           </Button>
         </CardContent>
       </Card>
