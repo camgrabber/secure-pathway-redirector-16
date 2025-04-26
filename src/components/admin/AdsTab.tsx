@@ -1,6 +1,5 @@
-
 import React, { useState } from 'react';
-import { Plus, RefreshCw, Eye, EyeOff, Save, Trash } from 'lucide-react';
+import { Plus, RefreshCw, Eye, EyeOff, Save, Trash, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -18,10 +17,12 @@ export const AdsTab = () => {
     position: 'top',
     code: '',
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   const { toast } = useToast();
   const { 
     adUnits, 
+    loading,
     addAdUnit, 
     updateAdUnit, 
     deleteAdUnit, 
@@ -29,18 +30,30 @@ export const AdsTab = () => {
     resetToDefaults: resetAdsToDefaults
   } = useAdManager();
 
-  const handleSaveAd = () => {
+  const handleSaveAd = async () => {
     if (!editingAd) return;
     
-    updateAdUnit(editingAd.id, editingAd);
-    setEditingAd(null);
-    toast({
-      title: 'Ad Updated',
-      description: 'Ad unit has been saved successfully',
-    });
+    try {
+      setIsSubmitting(true);
+      await updateAdUnit(editingAd.id, editingAd);
+      setEditingAd(null);
+      toast({
+        title: 'Ad Updated',
+        description: 'Ad unit has been saved successfully',
+      });
+    } catch (error) {
+      console.error('Error saving ad:', error);
+      toast({
+        title: 'Update Failed',
+        description: 'There was a problem updating this ad. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const handleCreateAd = () => {
+  const handleCreateAd = async () => {
     if (!newAdForm.name || !newAdForm.position || !newAdForm.code) {
       toast({
         title: 'Missing Information',
@@ -50,34 +63,99 @@ export const AdsTab = () => {
       return;
     }
     
-    addAdUnit({
-      name: newAdForm.name,
-      position: newAdForm.position,
-      code: newAdForm.code,
-      active: true,
-    });
-    
-    setNewAdForm({
-      name: '',
-      position: 'top',
-      code: '',
-    });
-    
-    toast({
-      title: 'Ad Created',
-      description: 'New ad unit has been created successfully',
-    });
+    try {
+      setIsSubmitting(true);
+      await addAdUnit({
+        name: newAdForm.name,
+        position: newAdForm.position,
+        code: newAdForm.code,
+        active: true,
+      });
+      
+      setNewAdForm({
+        name: '',
+        position: 'top',
+        code: '',
+      });
+      
+      toast({
+        title: 'Ad Created',
+        description: 'New ad unit has been created successfully',
+      });
+    } catch (error) {
+      console.error('Error creating ad:', error);
+      toast({
+        title: 'Creation Failed',
+        description: 'There was a problem creating this ad. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const handleResetAdsToDefaults = () => {
+  const handleResetAdsToDefaults = async () => {
     if (window.confirm('Reset all ads to default settings? This cannot be undone.')) {
-      resetAdsToDefaults();
+      try {
+        setIsSubmitting(true);
+        await resetAdsToDefaults();
+        toast({
+          title: 'Reset Complete',
+          description: 'Ad units have been reset to defaults',
+        });
+      } catch (error) {
+        console.error('Error resetting ads:', error);
+        toast({
+          title: 'Reset Failed',
+          description: 'There was a problem resetting ads. Please try again.',
+          variant: 'destructive',
+        });
+      } finally {
+        setIsSubmitting(false);
+      }
+    }
+  };
+  
+  const handleToggleActive = async (id: string) => {
+    try {
+      await toggleAdActive(id);
+    } catch (error) {
+      console.error('Error toggling ad state:', error);
       toast({
-        title: 'Reset Complete',
-        description: 'Ad units have been reset to defaults',
+        title: 'Status Change Failed',
+        description: 'There was a problem changing the ad status',
+        variant: 'destructive',
       });
     }
   };
+  
+  const handleDeleteAd = async (id: string) => {
+    if (window.confirm('Are you sure you want to delete this ad?')) {
+      try {
+        await deleteAdUnit(id);
+        toast({
+          title: 'Ad Deleted',
+          description: 'Ad unit has been removed',
+        });
+      } catch (error) {
+        console.error('Error deleting ad:', error);
+        toast({
+          title: 'Deletion Failed',
+          description: 'There was a problem deleting this ad',
+          variant: 'destructive',
+        });
+      }
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-redirector-primary" />
+        <p className="ml-2 text-lg">Loading ad units...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -156,7 +234,7 @@ export const AdsTab = () => {
                         <Button 
                           variant="outline" 
                           size="sm"
-                          onClick={() => toggleAdActive(ad.id)}
+                          onClick={() => handleToggleActive(ad.id)}
                           title={ad.active ? "Disable ad" : "Enable ad"}
                         >
                           {ad.active ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
@@ -174,7 +252,7 @@ export const AdsTab = () => {
                           size="sm" 
                           onClick={() => {
                             if (window.confirm('Are you sure you want to delete this ad?')) {
-                              deleteAdUnit(ad.id);
+                              handleDeleteAd(ad.id);
                               toast({
                                 title: 'Ad Deleted',
                                 description: 'Ad unit has been removed',

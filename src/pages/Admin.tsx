@@ -6,7 +6,6 @@ import { AdminDashboard } from '@/components/admin/AdminDashboard';
 import { useSettingsManager } from '@/utils/settingsManager';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Json } from '@/integrations/supabase/types';
 
 const Admin = () => {
   const [authenticated, setAuthenticated] = useState(false);
@@ -64,16 +63,13 @@ const Admin = () => {
             defaultDestinationUrl: "https://example.com"
           };
           
-          // TypeScript fix: Convert to Json type
-          const settingsAsJsonCompatible = { ...defaultSettings } as unknown as Json;
-          
-          console.log("Inserting default settings:", settingsAsJsonCompatible);
+          console.log("Inserting default settings:", defaultSettings);
           
           const { error: insertError } = await supabase
             .from('app_settings')
             .insert({
               id: 'app_settings',
-              setting_value: settingsAsJsonCompatible
+              setting_value: defaultSettings
             });
             
           if (insertError) {
@@ -91,7 +87,7 @@ const Admin = () => {
               .from('app_settings')
               .upsert({
                 id: 'app_settings',
-                setting_value: settingsAsJsonCompatible
+                setting_value: defaultSettings
               });
               
             if (upsertError) {
@@ -110,8 +106,26 @@ const Admin = () => {
       }
     };
     
-    initializeSettings();
-    setInitializing(false);
+    initializeSettings().then(() => {
+      setInitializing(false);
+    });
+    
+    // Enable Supabase real-time listening for app_settings table
+    const channel = supabase
+      .channel('public:app_settings')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'app_settings' },
+        (payload) => {
+          console.log('Real-time update received for app_settings:', payload);
+          // This will cause the useSettingsManager hook to reload settings
+        }
+      )
+      .subscribe();
+    
+    return () => {
+      // Clean up real-time subscription
+      channel.unsubscribe();
+    };
   }, [isLoaded, toast]);
 
   if (initializing) {

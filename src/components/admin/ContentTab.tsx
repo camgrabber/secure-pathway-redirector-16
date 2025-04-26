@@ -10,9 +10,9 @@ import { useSettingsManager } from '@/utils/settingsManager';
 
 export const ContentTab = () => {
   const { toast } = useToast();
-  const { settings } = useSettingsManager();
+  const { settings, updateSettings } = useSettingsManager();
 
-  const handleSaveSettings = (section: string) => {
+  const handleSaveSettings = async (section: string) => {
     const formElement = document.getElementById(`${section}-form`) as HTMLFormElement;
     if (!formElement) return;
     
@@ -23,10 +23,25 @@ export const ContentTab = () => {
       updates[key] = value as string;
     });
     
-    toast({
-      title: 'Settings Saved',
-      description: `${section.charAt(0).toUpperCase() + section.slice(1)} settings have been updated`,
-    });
+    try {
+      const result = await updateSettings(updates);
+      
+      if (result && result.success) {
+        toast({
+          title: 'Settings Saved',
+          description: `${section.charAt(0).toUpperCase() + section.slice(1)} settings have been updated`,
+        });
+      } else {
+        throw new Error('Update returned no success indication');
+      }
+    } catch (error) {
+      toast({
+        title: 'Save Failed',
+        description: `There was a problem saving ${section} settings`,
+        variant: 'destructive',
+      });
+      console.error(`Failed to save ${section} settings:`, error);
+    }
   };
 
   return (

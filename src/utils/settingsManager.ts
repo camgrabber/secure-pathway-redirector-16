@@ -62,7 +62,7 @@ const defaultSettings: AppSettings = {
 };
 
 export const useSettingsManager = () => {
-  const [settings, setSettings] = useState<AppSettings | null>(null);
+  const [settings, setSettings] = useState<AppSettings>(defaultSettings);
   const [isLoaded, setIsLoaded] = useState(false);
   
   // Load settings from Supabase on mount
@@ -131,6 +131,18 @@ export const useSettingsManager = () => {
           
         if (error) {
           console.error("Failed to initialize default settings:", error);
+          
+          // Try upsert if insert fails
+          const { error: upsertError } = await supabase
+            .from('app_settings')
+            .upsert({
+              id: SETTINGS_ID,
+              setting_value: settingsAsJsonCompatible
+            });
+            
+          if (upsertError) {
+            console.error("Failed to upsert default settings:", upsertError);
+          }
         } else {
           console.log("Successfully initialized default settings");
         }
@@ -147,6 +159,7 @@ export const useSettingsManager = () => {
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'app_settings' },
         (payload) => {
+          console.log("Received real-time update for settings:", payload);
           loadSettings(); // Reload settings when changes occur
         }
       )
@@ -161,6 +174,7 @@ export const useSettingsManager = () => {
   const updateSettings = async (updates: Partial<AppSettings>) => {
     if (!settings) return;
     
+    console.log("Updating settings with:", updates);
     const updatedSettings = { ...settings, ...updates };
     
     try {
@@ -172,9 +186,14 @@ export const useSettingsManager = () => {
         .update({ setting_value: settingsAsJsonCompatible })
         .eq('id', SETTINGS_ID);
       
-      if (error) throw error;
+      if (error) {
+        console.error("Error updating settings in Supabase:", error);
+        throw error;
+      }
+      
       setSettings(updatedSettings);
-      console.log("Settings updated successfully", updates);
+      console.log("Settings updated successfully:", updatedSettings);
+      return { success: true };
     } catch (e) {
       console.error('Failed to update settings:', e);
       throw e;
@@ -197,6 +216,7 @@ export const useSettingsManager = () => {
       if (error) throw error;
       setSettings(defaultSettings);
       console.log("Settings reset to defaults");
+      return { success: true };
     } catch (e) {
       console.error('Failed to reset settings:', e);
       throw e;
@@ -214,14 +234,19 @@ export const useSettingsManager = () => {
     // If settings aren't loaded yet, use default credentials
     const settingsToUse = settings || defaultSettings;
     
-    console.log("Verifying credentials against stored settings:", settingsToUse.adminUsername);
+    console.log("Verifying credentials against stored settings");
+    console.log("Checking username:", username, "vs", settingsToUse.adminUsername);
+    console.log("Checking password:", password.length > 0 ? "[provided]" : "[not provided]", 
+                "vs", settingsToUse.adminPassword ? "[stored]" : "[not stored]");
+    
     const isValid = username === settingsToUse.adminUsername && password === settingsToUse.adminPassword;
+    console.log("Credentials valid:", isValid);
     
     return isValid;
   };
   
   return {
-    settings: settings || defaultSettings, // Provide default settings as fallback
+    settings,
     isLoaded,
     updateSettings,
     resetToDefaults,

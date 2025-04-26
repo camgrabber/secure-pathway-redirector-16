@@ -60,22 +60,26 @@ export const SecurityTab = () => {
     }
     
     try {
-      await updateSettings(updates);
+      const result = await updateSettings(updates);
       
-      toast({
-        title: 'Credentials Updated',
-        description: 'Admin credentials have been successfully updated',
-      });
-      
-      // Clear password field after successful update
-      setFormValues({
-        ...formValues,
-        adminPassword: ''
-      });
+      if (result && result.success) {
+        toast({
+          title: 'Credentials Updated',
+          description: 'Admin credentials have been successfully updated',
+        });
+        
+        // Clear password field after successful update
+        setFormValues({
+          ...formValues,
+          adminPassword: ''
+        });
+      } else {
+        throw new Error('Update returned no success indication');
+      }
     } catch (error) {
       toast({
         title: 'Update Failed',
-        description: 'There was a problem updating credentials',
+        description: 'There was a problem updating credentials. Please try again.',
         variant: 'destructive',
       });
       console.error('Failed to update credentials:', error);
@@ -94,20 +98,24 @@ export const SecurityTab = () => {
         url = 'https://' + url;
       }
       
-      await updateSettings({
+      const result = await updateSettings({
         defaultDestinationUrl: url
       });
       
-      // Update local form value with potentially modified URL
-      setFormValues({
-        ...formValues,
-        defaultDestinationUrl: url
-      });
-      
-      toast({
-        title: 'Default Destination Updated',
-        description: 'Default destination URL has been saved',
-      });
+      if (result && result.success) {
+        // Update local form value with potentially modified URL
+        setFormValues({
+          ...formValues,
+          defaultDestinationUrl: url
+        });
+        
+        toast({
+          title: 'Default Destination Updated',
+          description: 'Default destination URL has been saved',
+        });
+      } else {
+        throw new Error('Update returned no success indication');
+      }
     } catch (error) {
       toast({
         title: 'Update Failed',
@@ -124,17 +132,21 @@ export const SecurityTab = () => {
     if (window.confirm('Reset all application settings to default? This cannot be undone.')) {
       setLoading(true);
       resetSettingsToDefaults()
-        .then(() => {
-          toast({
-            title: 'Reset Complete',
-            description: 'Application settings have been reset to defaults',
-          });
-          // Update form values with default settings
-          setFormValues({
-            adminUsername: 'admin',
-            adminPassword: '',
-            defaultDestinationUrl: 'https://example.com'
-          });
+        .then((result) => {
+          if (result && result.success) {
+            toast({
+              title: 'Reset Complete',
+              description: 'Application settings have been reset to defaults',
+            });
+            // Update form values with default settings
+            setFormValues({
+              adminUsername: 'admin',
+              adminPassword: '',
+              defaultDestinationUrl: 'https://example.com'
+            });
+          } else {
+            throw new Error('Reset returned no success indication');
+          }
         })
         .catch((error) => {
           toast({

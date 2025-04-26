@@ -1,11 +1,11 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Lock, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useSettingsManager } from '@/utils/settingsManager';
+import { supabase } from '@/integrations/supabase/client';
 
 interface LoginFormProps {
   onLoginSuccess: () => void;
@@ -14,8 +14,41 @@ interface LoginFormProps {
 export const LoginForm = ({ onLoginSuccess }: LoginFormProps) => {
   const [loginForm, setLoginForm] = useState({ username: '', password: '' });
   const [isLoading, setIsLoading] = useState(false);
+  const [settingsLoading, setSettingsLoading] = useState(true);
   const { toast } = useToast();
   const { verifyAdminCredentials, isLoaded, settings } = useSettingsManager();
+
+  useEffect(() => {
+    const checkSettings = async () => {
+      try {
+        console.log("Checking app_settings availability...");
+        const { data, error } = await supabase
+          .from('app_settings')
+          .select('*')
+          .eq('id', 'app_settings')
+          .maybeSingle();
+          
+        if (error) {
+          console.error("Error checking app_settings:", error);
+        }
+        
+        console.log("App settings check:", data ? "Available" : "Not available");
+        setSettingsLoading(false);
+      } catch (e) {
+        console.error("Error during settings check:", e);
+        setSettingsLoading(false);
+      }
+    };
+    
+    checkSettings();
+  }, []);
+
+  useEffect(() => {
+    console.log("Settings loaded status:", isLoaded);
+    if (isLoaded) {
+      setSettingsLoading(false);
+    }
+  }, [isLoaded]);
 
   const handleLogin = () => {
     setIsLoading(true);
@@ -37,8 +70,6 @@ export const LoginForm = ({ onLoginSuccess }: LoginFormProps) => {
       console.log("- Settings loaded state:", isLoaded);
       console.log("- Settings object exists:", !!settings);
       console.log("- Entered username:", loginForm.username);
-      console.log("- Default username should be:", settings?.adminUsername || "admin");
-      console.log("- Expected password is:", settings?.adminPassword || "admin123");
       
       // Force success with hardcoded credentials as backup
       if (loginForm.username === "admin" && loginForm.password === "admin123") {
@@ -95,15 +126,25 @@ export const LoginForm = ({ onLoginSuccess }: LoginFormProps) => {
     }, 500);
   };
 
-  // Add a debug function for default login
   const handleDebugLogin = () => {
     setLoginForm({ username: 'admin', password: 'admin123' });
     
-    // Execute normal login after a short delay
     setTimeout(() => {
       handleLogin();
     }, 100);
   };
+
+  if (settingsLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-200 p-4">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-redirector-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-lg font-medium text-gray-600">Loading login page...</p>
+          <p className="text-sm text-gray-500 mt-2">Connecting to database...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-200 p-4">
