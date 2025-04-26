@@ -33,9 +33,14 @@ export const LoginForm = ({ onLoginSuccess }: LoginFormProps) => {
 
     // Small delay to ensure settings are loaded
     setTimeout(() => {
+      console.log("Login attempt - detailed debug:");
+      console.log("- Settings loaded state:", isLoaded);
+      console.log("- Settings object exists:", !!settings);
+      console.log("- Entered username:", loginForm.username);
+      console.log("- Default username should be:", settings?.adminUsername || "admin");
+      
       if (isLoaded) {
         console.log("Attempting login with credentials:", loginForm.username);
-        console.log("Settings loaded:", !!settings);
         
         const isValid = verifyAdminCredentials(loginForm.username, loginForm.password);
         console.log("Credentials valid:", isValid);
@@ -50,21 +55,30 @@ export const LoginForm = ({ onLoginSuccess }: LoginFormProps) => {
         } else {
           toast({
             title: 'Authentication Failed',
-            description: 'Incorrect username or password',
+            description: 'Incorrect username or password. Default is admin/admin123',
             variant: 'destructive',
           });
-          console.log("Default credentials are admin/admin123. Please check app settings.");
         }
       } else {
         toast({
           title: 'System Error',
-          description: 'Settings not loaded yet. Please try again.',
+          description: 'Settings not loaded yet. Please refresh and try again.',
           variant: 'destructive',
         });
         console.error("Settings not loaded yet");
       }
       setIsLoading(false);
     }, 500);
+  };
+
+  // Add a debug function for default login
+  const handleDebugLogin = () => {
+    setLoginForm({ username: 'admin', password: 'admin123' });
+    
+    // Execute normal login after a short delay
+    setTimeout(() => {
+      handleLogin();
+    }, 100);
   };
 
   return (
@@ -121,6 +135,16 @@ export const LoginForm = ({ onLoginSuccess }: LoginFormProps) => {
               'Login'
             )}
           </Button>
+          
+          <div className="mt-4 text-center">
+            <button 
+              onClick={handleDebugLogin} 
+              type="button"
+              className="text-xs text-redirector-primary hover:underline"
+            >
+              Use Default Credentials
+            </button>
+          </div>
           
           <div className="text-center pt-4">
             <Link to="/" className="text-redirector-primary hover:underline text-sm">

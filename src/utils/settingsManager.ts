@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { Json } from '@/integrations/supabase/types';
 
 export interface AppSettings {
   // Admin credentials
@@ -84,18 +85,23 @@ export const useSettingsManager = () => {
         }
         
         // Properly type assert the JSON data to our AppSettings type
-        const settingsData = data.setting_value as unknown as AppSettings;
-        
-        // Validate that required fields exist
-        if (!settingsData || typeof settingsData !== 'object') {
-          console.error("Invalid settings data format");
-          // Use default settings on invalid format
+        if (data && data.setting_value) {
+          const settingsData = data.setting_value as unknown as AppSettings;
+          
+          // Validate that required fields exist
+          if (!settingsData || typeof settingsData !== 'object') {
+            console.error("Invalid settings data format");
+            // Use default settings on invalid format
+            setSettings(defaultSettings);
+            throw new Error('Invalid settings data format');
+          }
+          
+          console.log("Settings loaded successfully");
+          setSettings(settingsData);
+        } else {
+          console.log("No settings found, using defaults");
           setSettings(defaultSettings);
-          throw new Error('Invalid settings data format');
         }
-        
-        console.log("Settings loaded successfully");
-        setSettings(settingsData);
       } catch (e) {
         console.error('Failed to load settings:', e);
         // Ensure we always have settings by using defaults if needed
@@ -132,9 +138,12 @@ export const useSettingsManager = () => {
     const updatedSettings = { ...settings, ...updates };
     
     try {
+      // TypeScript fix: Convert AppSettings to a plain object that's compatible with Json type
+      const settingsAsJsonCompatible = { ...updatedSettings } as unknown as Json;
+      
       const { error } = await supabase
         .from('app_settings')
-        .update({ setting_value: updatedSettings })
+        .update({ setting_value: settingsAsJsonCompatible })
         .eq('id', SETTINGS_ID);
       
       if (error) throw error;
@@ -149,10 +158,13 @@ export const useSettingsManager = () => {
   // Reset settings to defaults
   const resetToDefaults = async () => {
     try {
+      // TypeScript fix: Convert defaultSettings to a plain object that's compatible with Json type
+      const defaultsAsJsonCompatible = { ...defaultSettings } as unknown as Json;
+      
       const { error } = await supabase
         .from('app_settings')
         .update({
-          setting_value: defaultSettings
+          setting_value: defaultsAsJsonCompatible
         })
         .eq('id', SETTINGS_ID);
       

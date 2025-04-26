@@ -5,12 +5,14 @@ import { LoginForm } from '@/components/admin/LoginForm';
 import { AdminDashboard } from '@/components/admin/AdminDashboard';
 import { useSettingsManager } from '@/utils/settingsManager';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { Json } from '@/integrations/supabase/types';
 
 const Admin = () => {
   const [authenticated, setAuthenticated] = useState(false);
   const [initializing, setInitializing] = useState(true);
   const navigate = useNavigate();
-  const { isLoaded } = useSettingsManager();
+  const { isLoaded, settings } = useSettingsManager();
   const { toast } = useToast();
   
   useEffect(() => {
@@ -26,8 +28,70 @@ const Admin = () => {
       setAuthenticated(true);
     }
     
+    // Initialize app settings in DB if needed
+    const initializeSettings = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('app_settings')
+          .select('*')
+          .eq('id', 'app_settings')
+          .maybeSingle();
+          
+        console.log("Checking if app_settings exists:", data);
+          
+        if (!data || error) {
+          console.log("Need to initialize app_settings");
+          
+          const defaultSettings = {
+            adminUsername: "admin",
+            adminPassword: "admin123",
+            initialTitle: "Wait For Secure Link",
+            initialSubtitle: "Your secure link is just moments away",
+            securityTitle: "Security Verification",
+            securitySubtitle: "We're checking this link for your safety",
+            confirmationTitle: "Ready to Proceed",
+            confirmationSubtitle: "Your link is ready for access",
+            initialTimerSeconds: 10,
+            securityScanDurationMs: 8000,
+            confirmationTimerSeconds: 5,
+            initialButtonText: "Continue to Security Check",
+            securityButtonText: "Proceed to Final Step",
+            confirmationButtonText: "Proceed to Destination",
+            copyLinkButtonText: "Copy Link",
+            securityBadgeText: "100% Secure Redirection Service",
+            footerText: `© ${new Date().getFullYear()} Secure Pathway Redirector. All rights reserved.`,
+            defaultDestinationUrl: "https://example.com"
+          };
+          
+          // TypeScript fix: Convert to Json type
+          const settingsAsJsonCompatible = { ...defaultSettings } as unknown as Json;
+          
+          const { error: insertError } = await supabase
+            .from('app_settings')
+            .insert({
+              id: 'app_settings',
+              setting_value: settingsAsJsonCompatible
+            });
+            
+          if (insertError) {
+            console.error("Failed to initialize settings:", insertError);
+            toast({
+              title: 'Settings Error',
+              description: 'Failed to initialize application settings',
+              variant: 'destructive',
+            });
+          } else {
+            console.log("App settings initialized successfully");
+          }
+        }
+      } catch (e) {
+        console.error("Error checking/initializing app_settings:", e);
+      }
+    };
+    
+    initializeSettings();
     setInitializing(false);
-  }, [isLoaded]);
+  }, [isLoaded, toast]);
 
   if (initializing) {
     return (
