@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Instagram, Twitter, WhatsApp } from 'lucide-react';
+import { MessageCircle, Instagram, Twitter } from 'lucide-react';
 import { Button } from './ui/button';
 import { useSettingsManager } from '@/utils/settingsManager';
 
@@ -19,7 +19,7 @@ export const SocialButtons = () => {
           size="icon"
           className="rounded-full bg-green-500 hover:bg-green-600 text-white"
         >
-          <WhatsApp className="h-5 w-5" />
+          <MessageCircle className="h-5 w-5" />
         </Button>
       )}
       
