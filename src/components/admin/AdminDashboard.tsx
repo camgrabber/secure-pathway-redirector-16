@@ -10,6 +10,7 @@ import { ContentTab } from './ContentTab';
 import { TimersTab } from './TimersTab';
 import SEOSettingsTab from './SEOSettingsTab';
 import { useSettingsManager } from '@/utils/settingsManager';
+import { useToast } from '@/hooks/use-toast';
 
 interface AdminDashboardProps {
   onLogout: () => void;
@@ -18,6 +19,7 @@ interface AdminDashboardProps {
 export const AdminDashboard = ({ onLogout }: AdminDashboardProps) => {
   const [activeTab, setActiveTab] = useState('ads');
   const { refreshSettings } = useSettingsManager();
+  const { toast } = useToast();
 
   const handleLogout = () => {
     onLogout();
@@ -27,12 +29,33 @@ export const AdminDashboard = ({ onLogout }: AdminDashboardProps) => {
   // Handle tab change - refresh settings when switching tabs
   const handleTabChange = (value: string) => {
     setActiveTab(value);
-    refreshSettings();
+    console.log("AdminDashboard: Tab changed to", value, "refreshing settings");
+    refreshSettings().then(() => {
+      console.log("AdminDashboard: Settings refreshed after tab change");
+    }).catch(error => {
+      console.error("AdminDashboard: Error refreshing settings after tab change:", error);
+      toast({
+        title: 'Error',
+        description: 'Failed to refresh settings data',
+        variant: 'destructive',
+      });
+    });
   };
 
-  // Refresh settings on initial load
+  // Refresh settings on initial load and regularly
   useEffect(() => {
+    console.log("AdminDashboard: Initial mounting, refreshing settings");
     refreshSettings();
+    
+    // Set up a periodic refresh to ensure data is current
+    const intervalId = setInterval(() => {
+      console.log("AdminDashboard: Periodic refresh of settings");
+      refreshSettings();
+    }, 15000); // Refresh every 15 seconds
+    
+    return () => {
+      clearInterval(intervalId);
+    };
   }, [refreshSettings]);
 
   return (
@@ -45,6 +68,19 @@ export const AdminDashboard = ({ onLogout }: AdminDashboardProps) => {
               <p className="text-gray-600">Manage your redirection service settings</p>
             </div>
             <div className="mt-4 md:mt-0 flex flex-wrap gap-2">
+              <Button 
+                onClick={() => {
+                  refreshSettings().then(() => {
+                    toast({
+                      title: 'Settings refreshed',
+                      description: 'Latest settings have been loaded',
+                    });
+                  });
+                }} 
+                variant="outline"
+              >
+                Refresh Settings
+              </Button>
               <Button onClick={handleLogout} variant="outline">
                 <Lock className="mr-2 h-4 w-4" />
                 Logout
