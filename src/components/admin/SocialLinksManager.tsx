@@ -28,12 +28,14 @@ export const SocialLinksManager = () => {
   const loadSocialLinks = async () => {
     try {
       setLoading(true);
+      console.log('SocialLinksManager: Loading social links');
       const { data, error } = await supabase
         .from('social_links')
         .select('*')
         .order('platform');
 
       if (error) throw error;
+      console.log('SocialLinksManager: Loaded social links:', data);
       setSocialLinks(data || []);
     } catch (error) {
       console.error('Error loading social links:', error);
@@ -50,20 +52,22 @@ export const SocialLinksManager = () => {
   const handleSave = async () => {
     try {
       setLoading(true);
+      console.log('SocialLinksManager: Saving links:', socialLinks);
       
-      // Update each link individually instead of using bulk upsert
+      // Update each link individually
       for (const link of socialLinks) {
+        console.log(`SocialLinksManager: Updating ${link.platform}, active: ${link.active}, url: ${link.url}`);
         const { error } = await supabase
           .from('social_links')
           .update({
-            url: link.url,
+            url: link.url || '',
             active: link.active,
             updated_at: new Date().toISOString()
           })
           .eq('id', link.id);
           
         if (error) {
-          console.error('Error updating link:', link.platform, error);
+          console.error(`Error updating ${link.platform}:`, error);
           throw error;
         }
       }
