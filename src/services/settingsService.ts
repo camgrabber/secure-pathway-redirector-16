@@ -7,27 +7,34 @@ import { Json } from '@/integrations/supabase/types';
 export const settingsService = {
   async loadSettings() {
     try {
+      console.log('SettingsService: Loading settings from database');
       const { data, error } = await supabase
         .from('app_settings')
         .select('setting_value')
         .eq('id', SETTINGS_ID)
         .maybeSingle();
       
-      if (error) throw error;
+      if (error) {
+        console.error('SettingsService: Error loading settings:', error);
+        throw error;
+      }
       
       if (data?.setting_value) {
+        console.log('SettingsService: Settings loaded successfully');
         return data.setting_value as unknown as AppSettings;
       }
       
+      console.log('SettingsService: No settings found');
       return null;
     } catch (e) {
-      console.error('Failed to load settings:', e);
+      console.error('SettingsService: Failed to load settings:', e);
       return null;
     }
   },
   
   async initializeDefaultSettings() {
     try {
+      console.log('SettingsService: Initializing default settings');
       const settingsAsJsonCompatible = { ...defaultSettings } as unknown as Json;
       
       const { error } = await supabase
@@ -35,31 +42,45 @@ export const settingsService = {
         .upsert({
           id: SETTINGS_ID,
           setting_value: settingsAsJsonCompatible
-        });
+        }, { onConflict: 'id' });
         
-      if (error) throw error;
+      if (error) {
+        console.error('SettingsService: Error initializing default settings:', error);
+        throw error;
+      }
+      
+      console.log('SettingsService: Default settings initialized successfully');
       return true;
     } catch (e) {
-      console.error('Error initializing default settings:', e);
+      console.error('SettingsService: Error initializing default settings:', e);
       return false;
     }
   },
   
   async updateSettings(updates: Partial<AppSettings>) {
     try {
+      console.log('SettingsService: Updating settings with:', updates);
       const currentSettings = await this.loadSettings() || defaultSettings;
       const updatedSettings = { ...currentSettings, ...updates };
       const settingsAsJsonCompatible = { ...updatedSettings } as unknown as Json;
       
       const { error } = await supabase
         .from('app_settings')
-        .update({ setting_value: settingsAsJsonCompatible })
+        .update({ 
+          setting_value: settingsAsJsonCompatible,
+          updated_at: new Date().toISOString()
+        })
         .eq('id', SETTINGS_ID);
       
-      if (error) throw error;
+      if (error) {
+        console.error('SettingsService: Failed to update settings:', error);
+        throw error;
+      }
+      
+      console.log('SettingsService: Settings updated successfully');
       return true;
     } catch (e) {
-      console.error('Failed to update settings:', e);
+      console.error('SettingsService: Failed to update settings:', e);
       return false;
     }
   }

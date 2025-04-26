@@ -14,6 +14,7 @@ export const TimersTab = () => {
 
   // Refresh settings when component mounts
   useEffect(() => {
+    console.log("TimersTab: Refreshing settings on mount");
     refreshSettings();
   }, [refreshSettings]);
 
@@ -34,10 +35,12 @@ export const TimersTab = () => {
     });
     
     try {
+      console.log(`TimersTab: Saving ${section} settings:`, updates);
       const result = await updateSettings(updates);
       
       if (result && result.success) {
         // After successful update, refresh settings to ensure UI is consistent
+        console.log(`TimersTab: ${section} settings saved successfully, refreshing`);
         await refreshSettings();
         
         toast({
@@ -48,12 +51,12 @@ export const TimersTab = () => {
         throw new Error('Update returned no success indication');
       }
     } catch (error) {
+      console.error(`TimersTab: Failed to save ${section} settings:`, error);
       toast({
         title: 'Save Failed',
         description: `There was a problem saving ${section} settings`,
         variant: 'destructive',
       });
-      console.error(`Failed to save ${section} settings:`, error);
     }
   };
 

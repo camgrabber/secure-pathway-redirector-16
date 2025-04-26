@@ -11,18 +11,19 @@ export const useSettingsManager = () => {
   
   const loadSettings = useCallback(async () => {
     try {
+      console.log("SettingsManager: Loading settings from database");
       const data = await settingsService.loadSettings();
       
       if (!data) {
-        console.log("No settings found, initializing defaults");
+        console.log("SettingsManager: No settings found, initializing defaults");
         await settingsService.initializeDefaultSettings();
         setSettings(defaultSettings);
       } else {
-        console.log("Settings loaded successfully:", data);
+        console.log("SettingsManager: Settings loaded successfully:", data);
         setSettings(data);
       }
     } catch (e) {
-      console.error('Failed to load settings:', e);
+      console.error('SettingsManager: Failed to load settings:', e);
       setSettings(defaultSettings);
     } finally {
       setIsLoaded(true);
@@ -30,65 +31,80 @@ export const useSettingsManager = () => {
   }, []);
   
   const refreshSettings = useCallback(async () => {
-    console.log("Manually refreshing settings from database");
-    return loadSettings();
+    console.log("SettingsManager: Manually refreshing settings from database");
+    await loadSettings();
+    return true;
   }, [loadSettings]);
   
   const updateSettings = async (updates: Partial<AppSettings>) => {
     try {
+      console.log("SettingsManager: Updating settings with:", updates);
       const success = await settingsService.updateSettings(updates);
       if (!success) throw new Error('Update failed');
       
+      // Apply updates to local state immediately
       const newSettings = { ...settings, ...updates };
       setSettings(newSettings);
+      
+      // Force a refresh from the database as well
+      setTimeout(() => {
+        refreshSettings();
+      }, 500);
+      
       return { success: true };
     } catch (e) {
-      console.error('Failed to update settings:', e);
+      console.error('SettingsManager: Failed to update settings:', e);
       throw e;
     }
   };
   
   const resetToDefaults = async () => {
     try {
+      console.log("SettingsManager: Resetting to default settings");
       const success = await settingsService.updateSettings(defaultSettings);
       if (!success) throw new Error('Reset failed');
       
       setSettings(defaultSettings);
       return { success: true };
     } catch (e) {
-      console.error('Failed to reset settings:', e);
+      console.error('SettingsManager: Failed to reset settings:', e);
       throw e;
     }
   };
   
   const verifyAdminCredentials = (username: string, password: string): boolean => {
     if (username === "admin" && password === "admin123") {
-      console.log("Login successful with default admin credentials");
+      console.log("SettingsManager: Login successful with default admin credentials");
       return true;
     }
     
     const settingsToUse = settings || defaultSettings;
     const isValid = username === settingsToUse.adminUsername && password === settingsToUse.adminPassword;
-    console.log("Credentials valid:", isValid);
+    console.log("SettingsManager: Credentials valid:", isValid);
     return isValid;
   };
   
   useEffect(() => {
     loadSettings();
     
+    // Set up real-time listener for settings changes
+    console.log("SettingsManager: Setting up real-time subscription");
     const channel = supabase
       .channel('settings_changes')
       .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'app_settings' },
+        { event: 'UPDATE', schema: 'public', table: 'app_settings' },
         (payload) => {
-          console.log("Received real-time update for settings:", payload);
+          console.log("SettingsManager: Received real-time update for settings:", payload);
           loadSettings();
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log("SettingsManager: Realtime subscription status:", status);
+      });
       
     return () => {
-      channel.unsubscribe();
+      console.log("SettingsManager: Unsubscribing from real-time updates");
+      supabase.removeChannel(channel);
     };
   }, [loadSettings]);
   

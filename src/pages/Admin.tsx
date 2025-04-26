@@ -11,7 +11,7 @@ const Admin = () => {
   const [authenticated, setAuthenticated] = useState(false);
   const [initializing, setInitializing] = useState(true);
   const navigate = useNavigate();
-  const { isLoaded, settings } = useSettingsManager();
+  const { isLoaded, settings, refreshSettings } = useSettingsManager();
   const { toast } = useToast();
   
   useEffect(() => {
@@ -27,7 +27,7 @@ const Admin = () => {
       setAuthenticated(true);
     }
     
-    // Initialize app settings in DB if needed
+    // Initialize app settings in DB if needed and set up real-time subscription
     const initializeSettings = async () => {
       try {
         console.log("Checking for app_settings in database");
@@ -101,6 +101,9 @@ const Admin = () => {
         } else {
           console.log("App settings found in database:", data);
         }
+        
+        // Force refresh of settings to ensure we have the latest data
+        await refreshSettings();
       } catch (e) {
         console.error("Error checking/initializing app_settings:", e);
       }
@@ -116,17 +119,21 @@ const Admin = () => {
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'app_settings' },
         (payload) => {
-          console.log('Real-time update received for app_settings:', payload);
-          // This will cause the useSettingsManager hook to reload settings
+          console.log('Admin: Real-time update received for app_settings:', payload);
+          // Force refresh settings when changes are detected
+          refreshSettings();
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Admin: Realtime subscription status:', status);
+      });
     
     return () => {
       // Clean up real-time subscription
-      channel.unsubscribe();
+      console.log('Admin: Cleaning up real-time subscription');
+      supabase.removeChannel(channel);
     };
-  }, [isLoaded, toast]);
+  }, [isLoaded, toast, refreshSettings]);
 
   if (initializing) {
     return (

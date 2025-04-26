@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -12,8 +11,9 @@ export const ContentTab = () => {
   const { toast } = useToast();
   const { settings, updateSettings, refreshSettings } = useSettingsManager();
 
-  // Refresh settings when component mounts
+  // Refresh settings when component mounts to ensure we have latest data
   useEffect(() => {
+    console.log("ContentTab: Refreshing settings on mount");
     refreshSettings();
   }, [refreshSettings]);
 
@@ -29,10 +29,12 @@ export const ContentTab = () => {
     });
     
     try {
+      console.log(`ContentTab: Saving ${section} settings:`, updates);
       const result = await updateSettings(updates);
       
       if (result && result.success) {
         // After successful update, refresh settings to ensure UI is consistent
+        console.log(`ContentTab: ${section} settings saved successfully, refreshing`);
         await refreshSettings();
         
         toast({
@@ -43,12 +45,12 @@ export const ContentTab = () => {
         throw new Error('Update returned no success indication');
       }
     } catch (error) {
+      console.error(`ContentTab: Failed to save ${section} settings:`, error);
       toast({
         title: 'Save Failed',
         description: `There was a problem saving ${section} settings`,
         variant: 'destructive',
       });
-      console.error(`Failed to save ${section} settings:`, error);
     }
   };
 
