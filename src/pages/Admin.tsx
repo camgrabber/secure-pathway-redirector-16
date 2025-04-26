@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
@@ -14,7 +13,8 @@ import {
   Settings,
   Clock,
   Type,
-  Layout
+  Layout,
+  Search
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -26,6 +26,7 @@ import { useAdManager, AdUnit } from '../utils/adManager';
 import { useSettingsManager } from '../utils/settingsManager';
 import { Separator } from '@/components/ui/separator';
 import { Label } from '@/components/ui/label';
+import SEOSettingsTab from '../components/admin/SEOSettingsTab';
 
 const Admin = () => {
   const navigate = useNavigate();
@@ -61,7 +62,6 @@ const Admin = () => {
     isLoaded
   } = useSettingsManager();
   
-  // Check if user is already logged in via session storage
   useEffect(() => {
     const isLoggedIn = sessionStorage.getItem('adminLoggedIn') === 'true';
     if (isLoggedIn) {
@@ -188,14 +188,11 @@ const Admin = () => {
     const formData = new FormData(formElement);
     const updates: Record<string, string | number> = {};
     
-    // Convert form data to settings object with proper type handling
     formData.forEach((value, key) => {
-      // Skip File objects - we're not handling file uploads in settings
       if (value instanceof File) {
         return;
       }
       
-      // Convert numeric values
       if (key.includes('Seconds') || key.includes('Duration')) {
         const numValue = parseInt(value as string, 10);
         updates[key] = isNaN(numValue) ? 0 : numValue;
@@ -298,7 +295,7 @@ const Admin = () => {
         </header>
         
         <Tabs defaultValue="ads" className="mb-6">
-          <TabsList className="grid grid-cols-4 mb-4">
+          <TabsList className="grid grid-cols-5 mb-4">
             <TabsTrigger value="ads">
               <Layout className="w-4 h-4 mr-2" />
               Ads Manager
@@ -315,12 +312,14 @@ const Admin = () => {
               <Clock className="w-4 h-4 mr-2" />
               Timers
             </TabsTrigger>
+            <TabsTrigger value="seo">
+              <Search className="w-4 h-4 mr-2" />
+              SEO
+            </TabsTrigger>
           </TabsList>
           
-          {/* Ads Manager Tab */}
           <TabsContent value="ads" className="mt-0">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Current Ads List */}
               <div className="lg:col-span-2 bg-white rounded-xl p-6 shadow-md">
                 <div className="flex justify-between items-center mb-4">
                   <h2 className="text-xl font-semibold">Current Ad Units</h2>
@@ -443,7 +442,6 @@ const Admin = () => {
                 )}
               </div>
               
-              {/* Add New Ad Form */}
               <div className="bg-white rounded-xl p-6 shadow-md">
                 <h2 className="text-xl font-semibold mb-4">Add New Ad Unit</h2>
                 
@@ -496,7 +494,6 @@ const Admin = () => {
             </div>
           </TabsContent>
           
-          {/* Security Tab */}
           <TabsContent value="security" className="mt-0">
             <div className="grid grid-cols-1 gap-6">
               <Card>
@@ -577,7 +574,6 @@ const Admin = () => {
             </div>
           </TabsContent>
           
-          {/* Content Tab */}
           <TabsContent value="content" className="mt-0">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Card>
@@ -728,7 +724,6 @@ const Admin = () => {
             </div>
           </TabsContent>
           
-          {/* Timers Tab */}
           <TabsContent value="timers" className="mt-0">
             <Card>
               <CardHeader>
@@ -791,6 +786,10 @@ const Admin = () => {
                 </form>
               </CardContent>
             </Card>
+          </TabsContent>
+          
+          <TabsContent value="seo" className="mt-0">
+            <SEOSettingsTab />
           </TabsContent>
         </Tabs>
       </div>

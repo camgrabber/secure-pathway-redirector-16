@@ -54,6 +54,60 @@ export type Database = {
         }
         Relationships: []
       }
+      seo_settings: {
+        Row: {
+          canonical_url: string | null
+          description: string | null
+          id: string
+          keywords: string | null
+          og_description: string | null
+          og_image_url: string | null
+          og_title: string | null
+          page_path: string
+          robots_content: string | null
+          title: string
+          twitter_card: string | null
+          twitter_description: string | null
+          twitter_image_url: string | null
+          twitter_title: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          canonical_url?: string | null
+          description?: string | null
+          id?: string
+          keywords?: string | null
+          og_description?: string | null
+          og_image_url?: string | null
+          og_title?: string | null
+          page_path: string
+          robots_content?: string | null
+          title: string
+          twitter_card?: string | null
+          twitter_description?: string | null
+          twitter_image_url?: string | null
+          twitter_title?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          canonical_url?: string | null
+          description?: string | null
+          id?: string
+          keywords?: string | null
+          og_description?: string | null
+          og_image_url?: string | null
+          og_title?: string | null
+          page_path?: string
+          robots_content?: string | null
+          title?: string
+          twitter_card?: string | null
+          twitter_description?: string | null
+          twitter_image_url?: string | null
+          twitter_title?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
