@@ -237,6 +237,16 @@ export const ContentTab = () => {
               />
             </div>
             
+            <div className="grid gap-2">
+              <Label htmlFor="telegramUrl">Telegram Link</Label>
+              <Input
+                id="telegramUrl"
+                name="telegramUrl"
+                defaultValue={settings.telegramUrl}
+                placeholder="https://t.me/yourusername"
+              />
+            </div>
+            
             <Button type="button" onClick={() => handleSaveSettings('social')} className="mt-2">
               <Save className="mr-2 h-4 w-4" />
               Save Social Links
