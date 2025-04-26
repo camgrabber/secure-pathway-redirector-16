@@ -61,32 +61,23 @@ export const settingsService = {
     try {
       console.log('SettingsService: Updating settings with:', updates);
       
-      // Direct update without fetching first (more reliable)
-      const { error } = await supabase.rpc('update_app_settings', {
-        settings_id: SETTINGS_ID,
-        settings_updates: updates as unknown as Json
-      });
+      // Instead of using RPC which is causing type issues, use the traditional approach directly
+      // First get current settings
+      const currentSettings = await this.loadSettings() || defaultSettings;
+      const updatedSettings = { ...currentSettings, ...updates };
+      const settingsAsJsonCompatible = { ...updatedSettings } as unknown as Json;
+      
+      const { error } = await supabase
+        .from('app_settings')
+        .update({ 
+          setting_value: settingsAsJsonCompatible,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', SETTINGS_ID);
       
       if (error) {
-        console.error('SettingsService: Failed to update settings via RPC:', error);
-        
-        // Fallback to the traditional method
-        const currentSettings = await this.loadSettings() || defaultSettings;
-        const updatedSettings = { ...currentSettings, ...updates };
-        const settingsAsJsonCompatible = { ...updatedSettings } as unknown as Json;
-        
-        const { error: fallbackError } = await supabase
-          .from('app_settings')
-          .update({ 
-            setting_value: settingsAsJsonCompatible,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', SETTINGS_ID);
-        
-        if (fallbackError) {
-          console.error('SettingsService: Fallback update also failed:', fallbackError);
-          throw fallbackError;
-        }
+        console.error('SettingsService: Failed to update settings:', error);
+        throw error;
       }
       
       console.log('SettingsService: Settings updated successfully');
@@ -97,12 +88,15 @@ export const settingsService = {
     }
   },
   
-  // New method to ensure we get fresh data
+  // Force refresh function to bypass any caching
   async forceRefreshSettings() {
     try {
       console.log('SettingsService: Force refreshing settings from database');
       
-      // Clear any potential cache 
+      // Use a cache-busting approach by adding a timestamp parameter
+      const timestamp = new Date().getTime();
+      console.log(`SettingsService: Adding cache-busting timestamp ${timestamp}`);
+      
       const { data, error } = await supabase
         .from('app_settings')
         .select('setting_value')

@@ -28,7 +28,7 @@ const Admin = () => {
       setAuthenticated(true);
     }
     
-    // Initialize app settings in DB if needed and set up real-time subscription
+    // Initialize app settings in DB if needed
     const initializeSettings = async () => {
       try {
         console.log("Admin: Checking for app_settings in database");
@@ -43,102 +43,29 @@ const Admin = () => {
         if (!data || error) {
           console.log("Admin: Need to initialize app_settings");
           
-          const defaultSettings = {
-            adminUsername: "admin",
-            adminPassword: "admin123",
-            initialTitle: "Wait For Secure Link",
-            initialSubtitle: "Your secure link is just moments away",
-            securityTitle: "Security Verification",
-            securitySubtitle: "We're checking this link for your safety",
-            confirmationTitle: "Ready to Proceed",
-            confirmationSubtitle: "Your link is ready for access",
-            initialTimerSeconds: 10,
-            securityScanDurationMs: 8000,
-            confirmationTimerSeconds: 5,
-            initialButtonText: "Continue to Security Check",
-            securityButtonText: "Proceed to Final Step",
-            confirmationButtonText: "Proceed to Destination",
-            copyLinkButtonText: "Copy Link",
-            securityBadgeText: "100% Secure Redirection Service",
-            footerText: `© ${new Date().getFullYear()} Secure Pathway Redirector. All rights reserved.`,
-            defaultDestinationUrl: "https://example.com"
-          };
-          
-          console.log("Admin: Inserting default settings:", defaultSettings);
-          
-          const { error: insertError } = await supabase
-            .from('app_settings')
-            .insert({
-              id: SETTINGS_ID,
-              setting_value: defaultSettings
-            });
-            
-          if (insertError) {
-            console.error("Admin: Failed to initialize settings:", insertError);
-            toast({
-              title: 'Settings Error',
-              description: 'Failed to initialize application settings',
-              variant: 'destructive',
-            });
-            
-            console.log("Admin: Trying upsert instead of insert due to error");
-            
-            // Try upsert as a fallback
-            const { error: upsertError } = await supabase
-              .from('app_settings')
-              .upsert({
-                id: SETTINGS_ID,
-                setting_value: defaultSettings
-              });
-              
-            if (upsertError) {
-              console.error("Admin: Upsert also failed:", upsertError);
-            } else {
-              console.log("Admin: Upsert succeeded");
-            }
-          } else {
-            console.log("Admin: App settings initialized successfully");
-          }
+          // Try to use settingsService for consistency
+          await refreshSettings();
         } else {
           console.log("Admin: App settings found in database:", data);
+          // Force a refresh to ensure we have the latest data
+          await refreshSettings();
         }
-        
-        // Force refresh of settings to ensure we have the latest data
-        await refreshSettings();
       } catch (e) {
         console.error("Admin: Error checking/initializing app_settings:", e);
+      } finally {
+        setInitializing(false);
       }
     };
     
-    initializeSettings().then(() => {
-      setInitializing(false);
-    });
+    initializeSettings();
     
-    // Enable Supabase real-time listening for app_settings table
-    const channel = supabase
-      .channel('admin-app_settings')
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'app_settings' },
-        (payload) => {
-          console.log('Admin: Real-time update received for app_settings:', payload);
-          // Force refresh settings when changes are detected
-          refreshSettings();
-        }
-      )
-      .subscribe((status) => {
-        console.log('Admin: Realtime subscription status:', status);
-      });
-    
-    // Schedule periodic refreshes
+    // Set up a periodic refresh to ensure data is current
     const refreshIntervalId = setInterval(() => {
       console.log("Admin: Scheduled refresh of settings");
       refreshSettings();
-    }, 10000); // Refresh every 10 seconds
+    }, 5000); // Refresh every 5 seconds (more frequently in admin)
     
     return () => {
-      // Clean up real-time subscription
-      console.log('Admin: Cleaning up real-time subscription');
-      supabase.removeChannel(channel);
       clearInterval(refreshIntervalId);
     };
   }, [isLoaded, toast, refreshSettings]);

@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Lock, ArrowLeft, Layout, Type, Clock, Search, Shield } from 'lucide-react';
+import { Lock, ArrowLeft, Layout, Type, Clock, Search, Shield, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AdsTab } from './AdsTab';
@@ -18,6 +18,7 @@ interface AdminDashboardProps {
 
 export const AdminDashboard = ({ onLogout }: AdminDashboardProps) => {
   const [activeTab, setActiveTab] = useState('ads');
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const { refreshSettings } = useSettingsManager();
   const { toast } = useToast();
 
@@ -30,28 +31,53 @@ export const AdminDashboard = ({ onLogout }: AdminDashboardProps) => {
   const handleTabChange = (value: string) => {
     setActiveTab(value);
     console.log("AdminDashboard: Tab changed to", value, "refreshing settings");
-    refreshSettings().then(() => {
-      console.log("AdminDashboard: Settings refreshed after tab change");
-    }).catch(error => {
-      console.error("AdminDashboard: Error refreshing settings after tab change:", error);
+    handleForceRefresh();
+  };
+
+  // Aggressive refresh that retries multiple times
+  const handleForceRefresh = async () => {
+    setIsRefreshing(true);
+    console.log("AdminDashboard: Forcing aggressive settings refresh");
+    
+    try {
+      // First refresh
+      await refreshSettings();
+      
+      // Set up multiple delayed refreshes to ensure we get the data
+      const delays = [1000, 2000, 3000]; // 1s, 2s, 3s delays
+      
+      for (const delay of delays) {
+        await new Promise(resolve => setTimeout(resolve, delay));
+        console.log(`AdminDashboard: Delayed refresh after ${delay}ms`);
+        await refreshSettings();
+      }
+      
       toast({
-        title: 'Error',
+        title: 'Settings refreshed',
+        description: 'Latest settings have been loaded',
+      });
+    } catch (error) {
+      console.error("AdminDashboard: Error during aggressive refresh:", error);
+      toast({
+        title: 'Refresh Error',
         description: 'Failed to refresh settings data',
         variant: 'destructive',
       });
-    });
+    } finally {
+      setIsRefreshing(false);
+    }
   };
 
   // Refresh settings on initial load and regularly
   useEffect(() => {
     console.log("AdminDashboard: Initial mounting, refreshing settings");
-    refreshSettings();
+    handleForceRefresh();
     
     // Set up a periodic refresh to ensure data is current
     const intervalId = setInterval(() => {
       console.log("AdminDashboard: Periodic refresh of settings");
       refreshSettings();
-    }, 15000); // Refresh every 15 seconds
+    }, 5000); // Refresh every 5 seconds
     
     return () => {
       clearInterval(intervalId);
@@ -69,17 +95,21 @@ export const AdminDashboard = ({ onLogout }: AdminDashboardProps) => {
             </div>
             <div className="mt-4 md:mt-0 flex flex-wrap gap-2">
               <Button 
-                onClick={() => {
-                  refreshSettings().then(() => {
-                    toast({
-                      title: 'Settings refreshed',
-                      description: 'Latest settings have been loaded',
-                    });
-                  });
-                }} 
+                onClick={handleForceRefresh} 
                 variant="outline"
+                disabled={isRefreshing}
               >
-                Refresh Settings
+                {isRefreshing ? (
+                  <>
+                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                    Refreshing...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    Refresh Settings
+                  </>
+                )}
               </Button>
               <Button onClick={handleLogout} variant="outline">
                 <Lock className="mr-2 h-4 w-4" />

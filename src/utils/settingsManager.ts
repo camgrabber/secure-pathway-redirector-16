@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { AppSettings, SETTINGS_ID } from '@/types/settings';
@@ -44,20 +45,13 @@ export const useSettingsManager = () => {
       if (!success) throw new Error('Update failed');
       
       // Apply updates to local state immediately for UI responsiveness
-      const newSettings = { ...settings, ...updates };
-      setSettings(newSettings);
+      setSettings(prevSettings => ({ ...prevSettings, ...updates }));
       
-      // Add multiple refresh attempts with increasing delays to ensure we get the updated data
-      const refreshAttempts = [500, 1500, 3000]; // milliseconds
-      
-      refreshAttempts.forEach(delay => {
-        setTimeout(() => {
-          console.log(`SettingsManager: Delayed refresh attempt after ${delay}ms`);
-          refreshSettings().catch(err => 
-            console.error(`SettingsManager: Failed delayed refresh at ${delay}ms:`, err)
-          );
-        }, delay);
-      });
+      // Force refresh after update to ensure consistency
+      setTimeout(() => {
+        console.log("SettingsManager: Performing delayed refresh after update");
+        refreshSettings();
+      }, 500);
       
       return { success: true };
     } catch (e) {
@@ -98,56 +92,34 @@ export const useSettingsManager = () => {
     return isValid;
   };
   
-  // Set up multiple channel subscriptions to ensure we catch all changes
   useEffect(() => {
+    console.log("SettingsManager: Initial setup");
     loadSettings();
     
-    // Set up multiple real-time listeners with different configurations to ensure we catch all changes
-    console.log("SettingsManager: Setting up real-time subscriptions");
-    
-    // Channel 1: General settings changes
-    const channel1 = supabase
-      .channel('settings_changes_general')
+    // Set up real-time subscription
+    console.log("SettingsManager: Setting up real-time subscription");
+    const channel = supabase
+      .channel('settings_changes')
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'app_settings' },
         (payload) => {
-          console.log("SettingsManager: Received real-time update for app_settings (general):", payload);
+          console.log("SettingsManager: Received real-time update:", payload);
           loadSettings();
         }
       )
       .subscribe((status) => {
-        console.log("SettingsManager: Realtime subscription status (general):", status);
+        console.log("SettingsManager: Realtime subscription status:", status);
       });
       
-    // Channel 2: Specific to our settings row
-    const channel2 = supabase
-      .channel('settings_changes_specific')
-      .on('postgres_changes', 
-        { 
-          event: 'UPDATE', 
-          schema: 'public', 
-          table: 'app_settings',
-          filter: `id=eq.${SETTINGS_ID}`
-        },
-        (payload) => {
-          console.log("SettingsManager: Received specific real-time update for our settings:", payload);
-          loadSettings();
-        }
-      )
-      .subscribe((status) => {
-        console.log("SettingsManager: Realtime specific subscription status:", status);
-      });
-    
     // Set up a periodic refresh as a failsafe
     const intervalId = setInterval(() => {
       console.log("SettingsManager: Performing periodic refresh");
-      loadSettings().catch(err => console.error("SettingsManager: Periodic refresh failed:", err));
-    }, 30000); // Every 30 seconds
+      loadSettings();
+    }, 15000); // Every 15 seconds
       
     return () => {
-      console.log("SettingsManager: Cleaning up real-time subscriptions and interval");
-      supabase.removeChannel(channel1);
-      supabase.removeChannel(channel2);
+      console.log("SettingsManager: Cleaning up");
+      supabase.removeChannel(channel);
       clearInterval(intervalId);
     };
   }, [loadSettings]);
