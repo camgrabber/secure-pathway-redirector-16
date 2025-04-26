@@ -24,7 +24,7 @@ export const settingsService = {
         return data.setting_value as unknown as AppSettings;
       }
       
-      console.log('SettingsService: No settings found');
+      console.log('SettingsService: No settings found, will initialize defaults');
       return null;
     } catch (e) {
       console.error('SettingsService: Failed to load settings:', e);
@@ -61,7 +61,6 @@ export const settingsService = {
     try {
       console.log('SettingsService: Updating settings with:', updates);
       
-      // Instead of using RPC which is causing type issues, use the traditional approach directly
       // First get current settings
       const currentSettings = await this.loadSettings() || defaultSettings;
       const updatedSettings = { ...currentSettings, ...updates };
@@ -93,7 +92,6 @@ export const settingsService = {
     try {
       console.log('SettingsService: Force refreshing settings from database');
       
-      // Use a cache-busting approach by adding a timestamp parameter
       const timestamp = new Date().getTime();
       console.log(`SettingsService: Adding cache-busting timestamp ${timestamp}`);
       
