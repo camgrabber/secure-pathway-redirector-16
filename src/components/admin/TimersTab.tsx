@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,7 +10,12 @@ import { useSettingsManager } from '@/utils/settingsManager';
 
 export const TimersTab = () => {
   const { toast } = useToast();
-  const { settings, updateSettings } = useSettingsManager();
+  const { settings, updateSettings, refreshSettings } = useSettingsManager();
+
+  // Refresh settings when component mounts
+  useEffect(() => {
+    refreshSettings();
+  }, [refreshSettings]);
 
   const handleSaveSettings = async (section: string) => {
     const formElement = document.getElementById(`${section}-form`) as HTMLFormElement;
@@ -32,6 +37,9 @@ export const TimersTab = () => {
       const result = await updateSettings(updates);
       
       if (result && result.success) {
+        // After successful update, refresh settings to ensure UI is consistent
+        await refreshSettings();
+        
         toast({
           title: 'Settings Saved',
           description: `${section.charAt(0).toUpperCase() + section.slice(1)} settings have been updated`,

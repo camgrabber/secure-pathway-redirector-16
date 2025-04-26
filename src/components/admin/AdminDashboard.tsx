@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Lock, ArrowLeft, Layout, Type, Clock, Search, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -9,16 +9,31 @@ import { SecurityTab } from './SecurityTab';
 import { ContentTab } from './ContentTab';
 import { TimersTab } from './TimersTab';
 import SEOSettingsTab from './SEOSettingsTab';
+import { useSettingsManager } from '@/utils/settingsManager';
 
 interface AdminDashboardProps {
   onLogout: () => void;
 }
 
 export const AdminDashboard = ({ onLogout }: AdminDashboardProps) => {
+  const [activeTab, setActiveTab] = useState('ads');
+  const { refreshSettings } = useSettingsManager();
+
   const handleLogout = () => {
     onLogout();
     sessionStorage.removeItem('adminLoggedIn');
   };
+
+  // Handle tab change - refresh settings when switching tabs
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    refreshSettings();
+  };
+
+  // Refresh settings on initial load
+  useEffect(() => {
+    refreshSettings();
+  }, [refreshSettings]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-200 p-4 md:p-8">
@@ -44,7 +59,7 @@ export const AdminDashboard = ({ onLogout }: AdminDashboardProps) => {
           </div>
         </header>
         
-        <Tabs defaultValue="ads" className="mb-6">
+        <Tabs defaultValue={activeTab} onValueChange={handleTabChange} className="mb-6">
           <TabsList className="grid grid-cols-5 mb-4">
             <TabsTrigger value="ads">
               <Layout className="w-4 h-4 mr-2" />

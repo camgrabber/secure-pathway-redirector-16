@@ -1,5 +1,4 @@
-
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Json } from '@/integrations/supabase/types';
 
@@ -65,92 +64,93 @@ export const useSettingsManager = () => {
   const [settings, setSettings] = useState<AppSettings>(defaultSettings);
   const [isLoaded, setIsLoaded] = useState(false);
   
-  // Load settings from Supabase on mount
-  useEffect(() => {
-    const loadSettings = async () => {
-      try {
-        console.log("Loading app settings from Supabase...");
-        const { data, error } = await supabase
-          .from('app_settings')
-          .select('setting_value')
-          .eq('id', SETTINGS_ID)
-          .maybeSingle();
-        
-        if (error) {
-          console.error("Failed to load settings:", error);
-          // Use default settings on error
-          console.log("Using default settings as fallback");
-          setSettings(defaultSettings);
-        } else if (data && data.setting_value) {
-          // Properly type assert the JSON data to our AppSettings type
-          try {
-            const settingsData = data.setting_value as unknown as AppSettings;
-            
-            // Validate that required fields exist
-            if (!settingsData || typeof settingsData !== 'object') {
-              console.error("Invalid settings data format");
-              // Use default settings on invalid format
-              setSettings(defaultSettings);
-            } else {
-              console.log("Settings loaded successfully:", settingsData);
-              setSettings(settingsData);
-            }
-          } catch (parseError) {
-            console.error("Failed to parse settings:", parseError);
-            setSettings(defaultSettings);
-          }
-        } else {
-          console.log("No settings found, using defaults");
-          setSettings(defaultSettings);
-          
-          // Try to initialize settings since they don't exist
-          await initializeDefaultSettings();
-        }
-      } catch (e) {
-        console.error('Failed to load settings:', e);
-        // Ensure we always have settings by using defaults if needed
+  // Function to load settings from Supabase
+  const loadSettings = useCallback(async () => {
+    try {
+      console.log("Loading app settings from Supabase...");
+      const { data, error } = await supabase
+        .from('app_settings')
+        .select('setting_value')
+        .eq('id', SETTINGS_ID)
+        .maybeSingle();
+      
+      if (error) {
+        console.error("Failed to load settings:", error);
+        // Use default settings on error
+        console.log("Using default settings as fallback");
         setSettings(defaultSettings);
-      } finally {
-        setIsLoaded(true);
-      }
-    };
-    
-    // Helper function to initialize default settings in the database
-    const initializeDefaultSettings = async () => {
-      try {
-        console.log("Initializing default settings in database");
-        // TypeScript fix: Convert to Json type correctly
-        const settingsAsJsonCompatible = { ...defaultSettings } as unknown as Json;
+      } else if (data && data.setting_value) {
+        // Properly type assert the JSON data to our AppSettings type
+        try {
+          const settingsData = data.setting_value as unknown as AppSettings;
+          
+          // Validate that required fields exist
+          if (!settingsData || typeof settingsData !== 'object') {
+            console.error("Invalid settings data format");
+            // Use default settings on invalid format
+            setSettings(defaultSettings);
+          } else {
+            console.log("Settings loaded successfully:", settingsData);
+            setSettings(settingsData);
+          }
+        } catch (parseError) {
+          console.error("Failed to parse settings:", parseError);
+          setSettings(defaultSettings);
+        }
+      } else {
+        console.log("No settings found, using defaults");
+        setSettings(defaultSettings);
         
-        const { error } = await supabase
+        // Try to initialize settings since they don't exist
+        await initializeDefaultSettings();
+      }
+    } catch (e) {
+      console.error('Failed to load settings:', e);
+      // Ensure we always have settings by using defaults if needed
+      setSettings(defaultSettings);
+    } finally {
+      setIsLoaded(true);
+    }
+  }, []);
+  
+  // Helper function to initialize default settings in the database
+  const initializeDefaultSettings = async () => {
+    try {
+      console.log("Initializing default settings in database");
+      // TypeScript fix: Convert to Json type correctly
+      const settingsAsJsonCompatible = { ...defaultSettings } as unknown as Json;
+      
+      const { error } = await supabase
+        .from('app_settings')
+        .insert({
+          id: SETTINGS_ID,
+          setting_value: settingsAsJsonCompatible
+        });
+          
+      if (error) {
+        console.error("Failed to initialize default settings:", error);
+        
+        // Try upsert if insert fails
+        const { error: upsertError } = await supabase
           .from('app_settings')
-          .insert({
+          .upsert({
             id: SETTINGS_ID,
             setting_value: settingsAsJsonCompatible
           });
-          
-        if (error) {
-          console.error("Failed to initialize default settings:", error);
-          
-          // Try upsert if insert fails
-          const { error: upsertError } = await supabase
-            .from('app_settings')
-            .upsert({
-              id: SETTINGS_ID,
-              setting_value: settingsAsJsonCompatible
-            });
             
-          if (upsertError) {
-            console.error("Failed to upsert default settings:", upsertError);
-          }
-        } else {
-          console.log("Successfully initialized default settings");
+        if (upsertError) {
+          console.error("Failed to upsert default settings:", upsertError);
         }
-      } catch (e) {
-        console.error("Error initializing default settings:", e);
+      } else {
+        console.log("Successfully initialized default settings");
       }
-    };
-    
+    } catch (e) {
+      console.error("Error initializing default settings:", e);
+    }
+  };
+  
+  // Load settings on mount
+  useEffect(() => {
     loadSettings();
     
     // Subscribe to realtime changes
@@ -168,7 +168,13 @@ export const useSettingsManager = () => {
     return () => {
       channel.unsubscribe();
     };
-  }, []);
+  }, [loadSettings]);
+  
+  // Public function to refresh settings manually
+  const refreshSettings = useCallback(async () => {
+    console.log("Manually refreshing settings from database");
+    return loadSettings();
+  }, [loadSettings]);
   
   // Update settings in Supabase
   const updateSettings = async (updates: Partial<AppSettings>) => {
@@ -250,6 +256,7 @@ export const useSettingsManager = () => {
     isLoaded,
     updateSettings,
     resetToDefaults,
-    verifyAdminCredentials
+    verifyAdminCredentials,
+    refreshSettings // Expose the refreshSettings function
   };
 };
