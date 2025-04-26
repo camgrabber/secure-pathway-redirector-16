@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -147,7 +146,7 @@ const SEOSettingsTab = () => {
           <CardHeader>
             <CardTitle>{setting.page_path}</CardTitle>
             <CardDescription>
-              Last updated: {new Date(setting.updated_at).toLocaleString()}
+              Last updated: {new Date().toLocaleString()}
             </CardDescription>
           </CardHeader>
           <CardContent>
