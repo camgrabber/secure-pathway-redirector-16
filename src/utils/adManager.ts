@@ -1,5 +1,6 @@
-// Ad configuration storage and management
+
 import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface AdUnit {
   id: string;
@@ -9,74 +10,116 @@ export interface AdUnit {
   active: boolean;
 }
 
-// Initialize with empty ad units - users can add their own through admin panel
-const defaultAdUnits: AdUnit[] = [];
-
-// Local storage key
-const AD_STORAGE_KEY = 'secure-pathway-ads';
-
-// Hook to manage ad units
 export const useAdManager = () => {
   const [adUnits, setAdUnits] = useState<AdUnit[]>([]);
   
-  // Load ads from localStorage on mount
+  // Load ads from Supabase on mount
   useEffect(() => {
-    const storedAds = localStorage.getItem(AD_STORAGE_KEY);
-    if (storedAds) {
+    const loadAds = async () => {
       try {
-        setAdUnits(JSON.parse(storedAds));
+        const { data, error } = await supabase
+          .from('ad_units')
+          .select('*');
+        
+        if (error) throw error;
+        setAdUnits(data || []);
       } catch (e) {
-        console.error('Failed to parse stored ads', e);
-        setAdUnits(defaultAdUnits);
-        localStorage.setItem(AD_STORAGE_KEY, JSON.stringify(defaultAdUnits));
+        console.error('Failed to load ads:', e);
+        setAdUnits([]);
       }
-    } else {
-      setAdUnits(defaultAdUnits);
-      localStorage.setItem(AD_STORAGE_KEY, JSON.stringify(defaultAdUnits));
-    }
+    };
+    
+    loadAds();
+    
+    // Subscribe to realtime changes
+    const channel = supabase
+      .channel('ad_units_changes')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'ad_units' },
+        (payload) => {
+          loadAds(); // Reload ads when changes occur
+        }
+      )
+      .subscribe();
+      
+    return () => {
+      channel.unsubscribe();
+    };
   }, []);
   
-  // Save changes to localStorage
-  const saveAdUnits = (updatedAdUnits: AdUnit[]) => {
-    setAdUnits(updatedAdUnits);
-    localStorage.setItem(AD_STORAGE_KEY, JSON.stringify(updatedAdUnits));
-  };
-  
   // Add a new ad unit
-  const addAdUnit = (adUnit: Omit<AdUnit, 'id'>) => {
-    const newAdUnit = {
-      ...adUnit,
-      id: `ad-${Date.now()}`, // Generate unique ID
-    };
-    saveAdUnits([...adUnits, newAdUnit]);
-    return newAdUnit;
+  const addAdUnit = async (adUnit: Omit<AdUnit, 'id'>) => {
+    try {
+      const { data, error } = await supabase
+        .from('ad_units')
+        .insert([{ ...adUnit, id: `ad-${Date.now()}` }])
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    } catch (e) {
+      console.error('Failed to add ad unit:', e);
+      throw e;
+    }
   };
   
   // Update an ad unit
-  const updateAdUnit = (id: string, updates: Partial<AdUnit>) => {
-    const updatedAdUnits = adUnits.map(ad => 
-      ad.id === id ? { ...ad, ...updates } : ad
-    );
-    saveAdUnits(updatedAdUnits);
+  const updateAdUnit = async (id: string, updates: Partial<AdUnit>) => {
+    try {
+      const { error } = await supabase
+        .from('ad_units')
+        .update(updates)
+        .eq('id', id);
+      
+      if (error) throw error;
+    } catch (e) {
+      console.error('Failed to update ad unit:', e);
+      throw e;
+    }
   };
   
   // Delete an ad unit
-  const deleteAdUnit = (id: string) => {
-    const updatedAdUnits = adUnits.filter(ad => ad.id !== id);
-    saveAdUnits(updatedAdUnits);
+  const deleteAdUnit = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('ad_units')
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
+    } catch (e) {
+      console.error('Failed to delete ad unit:', e);
+      throw e;
+    }
   };
   
   // Toggle ad unit active state
-  const toggleAdActive = (id: string) => {
-    const updatedAdUnits = adUnits.map(ad => 
-      ad.id === id ? { ...ad, active: !ad.active } : ad
-    );
-    saveAdUnits(updatedAdUnits);
+  const toggleAdActive = async (id: string) => {
+    const adUnit = adUnits.find(ad => ad.id === id);
+    if (!adUnit) return;
+    
+    try {
+      await updateAdUnit(id, { active: !adUnit.active });
+    } catch (e) {
+      console.error('Failed to toggle ad state:', e);
+      throw e;
+    }
   };
   
-  // Reset to defaults
-  const resetToDefaults = () => {
-    saveAdUnits(defaultAdUnits);
+  // Reset to defaults (clear all ads)
+  const resetToDefaults = async () => {
+    try {
+      const { error } = await supabase
+        .from('ad_units')
+        .delete()
+        .neq('id', ''); // Delete all records
+        
+      if (error) throw error;
+    } catch (e) {
+      console.error('Failed to reset ads:', e);
+      throw e;
+    }
   };
   
   // Get all active ad units for a position

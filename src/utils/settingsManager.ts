@@ -1,6 +1,6 @@
 
-// Settings configuration storage and management
 import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface AppSettings {
   // Admin credentials
@@ -32,88 +32,117 @@ export interface AppSettings {
   // Footer text
   footerText: string;
   
-  // Default destination (if none provided)
+  // Default destination
   defaultDestinationUrl: string;
 }
 
-// Default application settings
-const defaultSettings: AppSettings = {
-  adminUsername: "admin",
-  adminPassword: "admin123",
-  
-  initialTitle: "Wait For Secure Link",
-  initialSubtitle: "Your secure link is just moments away",
-  securityTitle: "Security Verification",
-  securitySubtitle: "We're checking this link for your safety",
-  confirmationTitle: "Ready to Proceed",
-  confirmationSubtitle: "Your link is ready for access",
-  
-  initialTimerSeconds: 10,
-  securityScanDurationMs: 8000,
-  confirmationTimerSeconds: 5,
-  
-  initialButtonText: "Continue to Security Check",
-  securityButtonText: "Proceed to Final Step",
-  confirmationButtonText: "Proceed to Destination",
-  copyLinkButtonText: "Copy Link",
-  
-  securityBadgeText: "100% Secure Redirection Service",
-  
-  footerText: `© ${new Date().getFullYear()} Secure Pathway Redirector. All rights reserved.`,
-  
-  defaultDestinationUrl: "https://example.com"
-};
+const SETTINGS_ID = 'app_settings';
 
-// Local storage key
-const SETTINGS_STORAGE_KEY = 'secure-pathway-settings';
-
-// Hook to manage application settings
 export const useSettingsManager = () => {
-  const [settings, setSettings] = useState<AppSettings>(defaultSettings);
+  const [settings, setSettings] = useState<AppSettings | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
   
-  // Load settings from localStorage on mount
+  // Load settings from Supabase on mount
   useEffect(() => {
-    const storedSettings = localStorage.getItem(SETTINGS_STORAGE_KEY);
-    if (storedSettings) {
+    const loadSettings = async () => {
       try {
-        setSettings(JSON.parse(storedSettings));
+        const { data, error } = await supabase
+          .from('app_settings')
+          .select('setting_value')
+          .eq('id', SETTINGS_ID)
+          .single();
+        
+        if (error) throw error;
+        setSettings(data.setting_value as AppSettings);
       } catch (e) {
-        console.error('Failed to parse stored settings', e);
-        setSettings(defaultSettings);
-        localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(defaultSettings));
+        console.error('Failed to load settings:', e);
+      } finally {
+        setIsLoaded(true);
       }
-    } else {
-      setSettings(defaultSettings);
-      localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(defaultSettings));
-    }
-    setIsLoaded(true);
+    };
+    
+    loadSettings();
+    
+    // Subscribe to realtime changes
+    const channel = supabase
+      .channel('settings_changes')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'app_settings' },
+        (payload) => {
+          loadSettings(); // Reload settings when changes occur
+        }
+      )
+      .subscribe();
+      
+    return () => {
+      channel.unsubscribe();
+    };
   }, []);
   
-  // Save settings to localStorage
-  const saveSettings = (updatedSettings: AppSettings) => {
-    setSettings(updatedSettings);
-    localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(updatedSettings));
-  };
-  
-  // Update specific settings
-  const updateSettings = (updates: Partial<AppSettings>) => {
+  // Update settings in Supabase
+  const updateSettings = async (updates: Partial<AppSettings>) => {
+    if (!settings) return;
+    
     const updatedSettings = { ...settings, ...updates };
-    saveSettings(updatedSettings);
+    
+    try {
+      const { error } = await supabase
+        .from('app_settings')
+        .update({ setting_value: updatedSettings })
+        .eq('id', SETTINGS_ID);
+      
+      if (error) throw error;
+      setSettings(updatedSettings);
+    } catch (e) {
+      console.error('Failed to update settings:', e);
+      throw e;
+    }
   };
   
-  // Reset to defaults
-  const resetToDefaults = () => {
-    saveSettings(defaultSettings);
+  // Reset settings to defaults
+  const resetToDefaults = async () => {
+    try {
+      const { error } = await supabase
+        .from('app_settings')
+        .update({
+          setting_value: {
+            adminUsername: "admin",
+            adminPassword: "admin123",
+            initialTitle: "Wait For Secure Link",
+            initialSubtitle: "Your secure link is just moments away",
+            securityTitle: "Security Verification",
+            securitySubtitle: "We're checking this link for your safety",
+            confirmationTitle: "Ready to Proceed",
+            confirmationSubtitle: "Your link is ready for access",
+            initialTimerSeconds: 10,
+            securityScanDurationMs: 8000,
+            confirmationTimerSeconds: 5,
+            initialButtonText: "Continue to Security Check",
+            securityButtonText: "Proceed to Final Step",
+            confirmationButtonText: "Proceed to Destination",
+            copyLinkButtonText: "Copy Link",
+            securityBadgeText: "100% Secure Redirection Service",
+            footerText: `© ${new Date().getFullYear()} Secure Pathway Redirector. All rights reserved.`,
+            defaultDestinationUrl: "https://example.com"
+          }
+        })
+        .eq('id', SETTINGS_ID);
+      
+      if (error) throw error;
+    } catch (e) {
+      console.error('Failed to reset settings:', e);
+      throw e;
+    }
   };
   
   // Verify admin credentials
   const verifyAdminCredentials = (username: string, password: string): boolean => {
+    if (!settings) return false;
     return username === settings.adminUsername && password === settings.adminPassword;
   };
   
   return {
-    settings,
+    settings: settings || {} as AppSettings, // Provide empty object as fallback
     isLoaded,
     updateSettings,
     resetToDefaults,
