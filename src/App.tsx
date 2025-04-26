@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -18,6 +17,7 @@ const queryClient = new QueryClient();
 
 const App = () => {
   const [adBlockerDetected, setAdBlockerDetected] = useState<boolean | null>(null);
+  const [bypassAdBlocker, setBypassAdBlocker] = useState(false);
   const [checkComplete, setCheckComplete] = useState(false);
 
   useEffect(() => {
@@ -45,7 +45,8 @@ const App = () => {
         console.log(`Adblock final detection result: ${initialCheck || secondCheck ? "BLOCKED" : "NOT BLOCKED"}`);
       } catch (error) {
         console.error("Error in adblock detection:", error);
-        setAdBlockerDetected(true); // Assume blocked on error
+        // Don't automatically assume blocked on error
+        setAdBlockerDetected(false);
       } finally {
         setCheckComplete(true);
       }
@@ -53,8 +54,8 @@ const App = () => {
 
     detectAdBlocker();
     
-    // Re-check periodically in case adblocker is activated after initial load
-    const intervalCheck = setInterval(async () => {
+    // Reduce the interval check frequency and only do it once
+    const singleCheck = setTimeout(async () => {
       try {
         if (!adBlockerDetected) {
           const isBlocked = await checkForAdBlocker();
@@ -66,17 +67,21 @@ const App = () => {
       } catch (error) {
         console.error("Error in interval adblock check:", error);
       }
-    }, 15000); // Check every 15 seconds (reduced from 30)
+    }, 5000); // Check once after 5 seconds
     
-    return () => clearInterval(intervalCheck);
-  }, [adBlockerDetected]);
+    return () => clearTimeout(singleCheck);
+  }, []);
 
-  if (adBlockerDetected === true) {
-    return <AdBlockerDetected />;
+  const handleContinueAnyway = () => {
+    setBypassAdBlocker(true);
+  };
+
+  if (adBlockerDetected === true && !bypassAdBlocker) {
+    return <AdBlockerDetected onContinueAnyway={handleContinueAnyway} />;
   }
 
-  // Only render the app when we've confirmed no adblocker is present and check is complete
-  if (checkComplete && adBlockerDetected === false) {
+  // Only render the app when we've confirmed no adblocker is present, check is complete, or user bypassed
+  if ((checkComplete && adBlockerDetected === false) || bypassAdBlocker) {
     return (
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
