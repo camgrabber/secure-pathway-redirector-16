@@ -62,9 +62,9 @@ export const settingsService = {
       console.log('SettingsService: Updating settings with:', updates);
       
       // Direct update without fetching first (more reliable)
-      const { error, data } = await supabase.rpc('update_app_settings', {
+      const { error } = await supabase.rpc('update_app_settings', {
         settings_id: SETTINGS_ID,
-        settings_updates: updates as Json
+        settings_updates: updates as unknown as Json
       });
       
       if (error) {
@@ -102,12 +102,11 @@ export const settingsService = {
     try {
       console.log('SettingsService: Force refreshing settings from database');
       
-      // Clear any potential cache with nocache parameter
+      // Clear any potential cache 
       const { data, error } = await supabase
         .from('app_settings')
         .select('setting_value')
         .eq('id', SETTINGS_ID)
-        .options({ count: 'exact' })
         .maybeSingle();
       
       if (error) {

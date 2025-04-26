@@ -1,7 +1,6 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { AppSettings } from '@/types/settings';
+import { AppSettings, SETTINGS_ID } from '@/types/settings';
 import { defaultSettings } from './defaultSettings';
 import { settingsService } from '@/services/settingsService';
 
