@@ -31,6 +31,7 @@ const Admin = () => {
     // Initialize app settings in DB if needed
     const initializeSettings = async () => {
       try {
+        console.log("Checking for app_settings in database");
         const { data, error } = await supabase
           .from('app_settings')
           .select('*')
@@ -66,6 +67,8 @@ const Admin = () => {
           // TypeScript fix: Convert to Json type
           const settingsAsJsonCompatible = { ...defaultSettings } as unknown as Json;
           
+          console.log("Inserting default settings:", settingsAsJsonCompatible);
+          
           const { error: insertError } = await supabase
             .from('app_settings')
             .insert({
@@ -80,9 +83,27 @@ const Admin = () => {
               description: 'Failed to initialize application settings',
               variant: 'destructive',
             });
+            
+            console.log("Trying upsert instead of insert due to error");
+            
+            // Try upsert as a fallback
+            const { error: upsertError } = await supabase
+              .from('app_settings')
+              .upsert({
+                id: 'app_settings',
+                setting_value: settingsAsJsonCompatible
+              });
+              
+            if (upsertError) {
+              console.error("Upsert also failed:", upsertError);
+            } else {
+              console.log("Upsert succeeded");
+            }
           } else {
             console.log("App settings initialized successfully");
           }
+        } else {
+          console.log("App settings found in database:", data);
         }
       } catch (e) {
         console.error("Error checking/initializing app_settings:", e);
