@@ -53,7 +53,16 @@ export const useSettingsManager = () => {
           .single();
         
         if (error) throw error;
-        setSettings(data.setting_value as AppSettings);
+        
+        // Properly type assert the JSON data to our AppSettings type
+        const settingsData = data.setting_value as unknown as AppSettings;
+        
+        // Validate that required fields exist
+        if (!settingsData || typeof settingsData !== 'object') {
+          throw new Error('Invalid settings data format');
+        }
+        
+        setSettings(settingsData);
       } catch (e) {
         console.error('Failed to load settings:', e);
       } finally {
