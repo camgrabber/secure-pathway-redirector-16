@@ -1,0 +1,9 @@
+
+# Netlify configuration file
+
+# The following redirect rule tells Netlify to route all requests to index.html
+# This allows client-side routing to work correctly with React Router
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
