@@ -63,8 +63,26 @@ export const settingsService = {
       
       // First get current settings
       const currentSettings = await this.loadSettings() || defaultSettings;
-      const updatedSettings = { ...currentSettings, ...updates };
+      
+      // Ensure numeric fields are properly converted to numbers
+      const processedUpdates = { ...updates };
+      
+      // Process numeric fields explicitly
+      if ('initialTimerSeconds' in updates) {
+        processedUpdates.initialTimerSeconds = Number(updates.initialTimerSeconds);
+      }
+      if ('securityScanDurationMs' in updates) {
+        processedUpdates.securityScanDurationMs = Number(updates.securityScanDurationMs);
+      }
+      if ('confirmationTimerSeconds' in updates) {
+        processedUpdates.confirmationTimerSeconds = Number(updates.confirmationTimerSeconds);
+      }
+      
+      const updatedSettings = { ...currentSettings, ...processedUpdates };
       const settingsAsJsonCompatible = { ...updatedSettings } as unknown as Json;
+      
+      console.log('SettingsService: Processed updates:', processedUpdates);
+      console.log('SettingsService: Final settings to save:', updatedSettings);
       
       const { error } = await supabase
         .from('app_settings')

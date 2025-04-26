@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Lock, ArrowLeft } from 'lucide-react';
@@ -100,7 +101,7 @@ export const LoginForm = ({ onLoginSuccess }: LoginFormProps) => {
         } else {
           toast({
             title: 'Authentication Failed',
-            description: 'Incorrect username or password. Default is admin/admin123',
+            description: 'Incorrect username or password',
             variant: 'destructive',
           });
         }
@@ -116,7 +117,7 @@ export const LoginForm = ({ onLoginSuccess }: LoginFormProps) => {
         } else {
           toast({
             title: 'System Error',
-            description: 'Settings not loaded yet. Please try default admin/admin123 or refresh and try again.',
+            description: 'Settings not loaded yet. Please refresh and try again.',
             variant: 'destructive',
           });
           console.error("Settings not loaded yet");
@@ -124,14 +125,6 @@ export const LoginForm = ({ onLoginSuccess }: LoginFormProps) => {
       }
       setIsLoading(false);
     }, 500);
-  };
-
-  const handleDebugLogin = () => {
-    setLoginForm({ username: 'admin', password: 'admin123' });
-    
-    setTimeout(() => {
-      handleLogin();
-    }, 100);
   };
 
   if (settingsLoading) {
@@ -183,7 +176,6 @@ export const LoginForm = ({ onLoginSuccess }: LoginFormProps) => {
                 }
               }}
             />
-            <p className="text-xs text-gray-500 mt-1">Default: admin/admin123 (if not changed)</p>
           </div>
           
           <Button 
@@ -200,17 +192,6 @@ export const LoginForm = ({ onLoginSuccess }: LoginFormProps) => {
               'Login'
             )}
           </Button>
-          
-          <div className="mt-4 text-center">
-            <Button 
-              onClick={handleDebugLogin} 
-              variant="outline"
-              type="button"
-              className="text-sm"
-            >
-              Use Default Credentials
-            </Button>
-          </div>
           
           <div className="text-center pt-4">
             <Link to="/" className="text-redirector-primary hover:underline text-sm">
