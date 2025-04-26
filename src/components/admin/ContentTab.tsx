@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useSettingsManager } from '@/utils/settingsManager';
+import { SocialLinksManager } from './SocialLinksManager';
 
 export const ContentTab = () => {
   const { toast } = useToast();
@@ -200,60 +201,7 @@ export const ContentTab = () => {
         </CardContent>
       </Card>
       
-      <Card>
-        <CardHeader>
-          <CardTitle>Social Media Links</CardTitle>
-          <CardDescription>Configure your social media button links</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form id="social-form" className="grid gap-4">
-            <div className="grid gap-2">
-              <Label htmlFor="whatsappUrl">WhatsApp Link</Label>
-              <Input
-                id="whatsappUrl"
-                name="whatsappUrl"
-                defaultValue={settings.whatsappUrl}
-                placeholder="https://wa.me/yourphonenumber"
-              />
-            </div>
-            
-            <div className="grid gap-2">
-              <Label htmlFor="instagramUrl">Instagram Profile</Label>
-              <Input
-                id="instagramUrl"
-                name="instagramUrl"
-                defaultValue={settings.instagramUrl}
-                placeholder="https://instagram.com/yourusername"
-              />
-            </div>
-            
-            <div className="grid gap-2">
-              <Label htmlFor="twitterUrl">X (Twitter) Profile</Label>
-              <Input
-                id="twitterUrl"
-                name="twitterUrl"
-                defaultValue={settings.twitterUrl}
-                placeholder="https://x.com/yourusername"
-              />
-            </div>
-            
-            <div className="grid gap-2">
-              <Label htmlFor="telegramUrl">Telegram Link</Label>
-              <Input
-                id="telegramUrl"
-                name="telegramUrl"
-                defaultValue={settings.telegramUrl}
-                placeholder="https://t.me/yourusername"
-              />
-            </div>
-            
-            <Button type="button" onClick={() => handleSaveSettings('social')} className="mt-2">
-              <Save className="mr-2 h-4 w-4" />
-              Save Social Links
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+      <SocialLinksManager />
     </div>
   );
 };

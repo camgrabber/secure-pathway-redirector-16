@@ -108,6 +108,33 @@ export type Database = {
         }
         Relationships: []
       }
+      social_links: {
+        Row: {
+          active: boolean | null
+          created_at: string | null
+          id: string
+          platform: string
+          updated_at: string | null
+          url: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          created_at?: string | null
+          id?: string
+          platform: string
+          updated_at?: string | null
+          url?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          created_at?: string | null
+          id?: string
+          platform?: string
+          updated_at?: string | null
+          url?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
