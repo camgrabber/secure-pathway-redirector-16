@@ -1,8 +1,11 @@
 
 import React from 'react';
-import { MessageCircle, Instagram, Twitter } from 'lucide-react';
 import { Button } from './ui/button';
 import { useSettingsManager } from '@/utils/settingsManager';
+import { WhatsappIcon } from './icons/WhatsappIcon';
+import { InstagramIcon } from './icons/InstagramIcon';
+import { TwitterIcon } from './icons/TwitterIcon';
+import { TelegramIcon } from './icons/TelegramIcon';
 
 export const SocialButtons = () => {
   const { settings } = useSettingsManager();
@@ -17,9 +20,9 @@ export const SocialButtons = () => {
         <Button
           onClick={() => openUrl(settings.whatsappUrl)}
           size="icon"
-          className="rounded-full bg-green-500 hover:bg-green-600 hover:scale-110 transform transition-all duration-300 text-white shadow-lg hover:shadow-green-500/50"
+          className="rounded-full bg-[#25D366] hover:bg-[#128C7E] hover:scale-110 transform transition-all duration-300 text-white shadow-lg hover:shadow-[#25D366]/50"
         >
-          <MessageCircle className="h-5 w-5 animate-bounce-small" />
+          <WhatsappIcon className="h-5 w-5 animate-bounce-small" />
         </Button>
       )}
       
@@ -27,9 +30,9 @@ export const SocialButtons = () => {
         <Button
           onClick={() => openUrl(settings.instagramUrl)}
           size="icon"
-          className="rounded-full bg-gradient-to-br from-pink-500 via-purple-500 to-orange-400 hover:from-pink-600 hover:via-purple-600 hover:to-orange-500 hover:scale-110 transform transition-all duration-300 text-white shadow-lg hover:shadow-pink-500/50"
+          className="rounded-full bg-gradient-to-br from-[#833AB4] via-[#FD1D1D] to-[#F77737] hover:from-[#833AB4]/90 hover:via-[#FD1D1D]/90 hover:to-[#F77737]/90 hover:scale-110 transform transition-all duration-300 text-white shadow-lg hover:shadow-[#833AB4]/50"
         >
-          <Instagram className="h-5 w-5 animate-bounce-small" />
+          <InstagramIcon className="h-5 w-5 animate-bounce-small" />
         </Button>
       )}
       
@@ -37,12 +40,21 @@ export const SocialButtons = () => {
         <Button
           onClick={() => openUrl(settings.twitterUrl)}
           size="icon"
-          className="rounded-full bg-blue-400 hover:bg-blue-500 hover:scale-110 transform transition-all duration-300 text-white shadow-lg hover:shadow-blue-400/50"
+          className="rounded-full bg-black hover:bg-black/90 hover:scale-110 transform transition-all duration-300 text-white shadow-lg hover:shadow-black/50"
         >
-          <Twitter className="h-5 w-5 animate-bounce-small" />
+          <TwitterIcon className="h-5 w-5 animate-bounce-small" />
+        </Button>
+      )}
+
+      {settings.telegramUrl && (
+        <Button
+          onClick={() => openUrl(settings.telegramUrl)}
+          size="icon"
+          className="rounded-full bg-[#0088cc] hover:bg-[#0088cc]/90 hover:scale-110 transform transition-all duration-300 text-white shadow-lg hover:shadow-[#0088cc]/50"
+        >
+          <TelegramIcon className="h-5 w-5 animate-bounce-small" />
         </Button>
       )}
     </div>
   );
 };
-

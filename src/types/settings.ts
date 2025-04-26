@@ -1,4 +1,3 @@
-
 export interface AppSettings {
   // Admin credentials
   adminUsername: string;
@@ -36,6 +35,7 @@ export interface AppSettings {
   whatsappUrl: string;
   instagramUrl: string;
   twitterUrl: string;
+  telegramUrl: string;
 }
 
 export const SETTINGS_ID = 'app_settings';

@@ -23,5 +23,6 @@ export const defaultSettings: AppSettings = {
   // Social media URLs
   whatsappUrl: "",
   instagramUrl: "",
-  twitterUrl: ""
+  twitterUrl: "",
+  telegramUrl: ""
 };

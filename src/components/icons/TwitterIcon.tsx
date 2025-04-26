@@ -1,0 +1,12 @@
+
+import React from 'react';
+
+export const TwitterIcon = ({ className }: { className?: string }) => (
+  <svg 
+    viewBox="0 0 24 24"
+    fill="currentColor"
+    className={className}
+  >
+    <path d="M14.2833 11.0024L23.2178 0.845215H21.1006L13.3427 9.66452L7.14656 0.845215H0L9.36828 14.1518L0 24.8452H2.11723L10.3098 15.4897L16.8534 24.8452H24L14.2833 11.0024ZM11.3833 14.2345L10.4339 12.9108L2.88594 2.46855H6.1339L12.1464 10.8819L13.0958 12.2055L21.1006 23.2741H17.8526L11.3833 14.2345Z"/>
+  </svg>
+);
