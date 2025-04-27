@@ -1,14 +1,21 @@
 
 import React, { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const Index = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   
   useEffect(() => {
+    // Get the URL from query parameters
+    const queryParams = new URLSearchParams(window.location.search);
+    const destinationUrl = queryParams.get('url');
+    
     // Use state to pass the URL instead of query parameters
     navigate('/initial-redirect', {
-      state: { url: 'https://example.com' }
+      state: { 
+        url: destinationUrl || 'https://example.com'
+      }
     });
   }, [navigate]);
   
