@@ -1,6 +1,5 @@
 
 import React from 'react';
-import { Link } from 'react-router-dom';
 import { WhatsAppButton } from './social/WhatsAppButton';
 import { InstagramButton } from './social/InstagramButton';
 import { TelegramButton } from './social/TelegramButton';
@@ -18,14 +17,6 @@ export const SocialButtons = () => {
         {settings.telegramUrl && <TelegramButton url={settings.telegramUrl} />}
         {settings.twitterUrl && <TwitterButton url={settings.twitterUrl} />}
       </div>
-      
-      <Link 
-        to="/admin" 
-        className="text-xs text-gray-500 hover:text-gray-700 flex items-center justify-center"
-        title="Admin Access"
-      >
-        Admin
-      </Link>
     </div>
   );
 };

@@ -1,10 +1,11 @@
 
 import React, { useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import { useSettingsManager } from '@/utils/settingsManager';
 
 const Index = () => {
   const navigate = useNavigate();
-  const location = useLocation();
+  const { settings } = useSettingsManager();
   
   useEffect(() => {
     // Get the URL from query parameters
@@ -14,10 +15,10 @@ const Index = () => {
     // Use state to pass the URL instead of query parameters
     navigate('/initial-redirect', {
       state: { 
-        url: destinationUrl || 'https://example.com'
+        url: destinationUrl || settings.defaultDestinationUrl || 'https://example.com'
       }
     });
-  }, [navigate]);
+  }, [navigate, settings.defaultDestinationUrl]);
   
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-200">
