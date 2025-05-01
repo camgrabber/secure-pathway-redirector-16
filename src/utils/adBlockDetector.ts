@@ -54,6 +54,23 @@ const isAdDivBlocked = (): boolean => {
   return isBlocked;
 };
 
+// Check for bait elements getting removed - another detection method
+const isBaitElementRemoved = (): boolean => {
+  // Create a bait element
+  const bait = document.createElement('div');
+  bait.setAttribute('class', 'adsbygoogle');
+  bait.setAttribute('style', 'height: 1px; width: 1px; position: absolute; left: -10000px; top: -1000px;');
+  bait.setAttribute('data-ad-client', 'ca-pub-XXX');
+  document.body.appendChild(bait);
+  
+  // Check if it was removed or modified
+  const isRemoved = bait.offsetParent === null;
+  
+  // Clean up
+  document.body.removeChild(bait);
+  return isRemoved;
+};
+
 export const checkForAdBlocker = async (): Promise<boolean> => {
   console.log("Running enhanced adblock detection...");
   
@@ -75,9 +92,22 @@ export const checkForAdBlocker = async (): Promise<boolean> => {
     blockedCount++;
   }
   
+  // Method 3: Check if bait element is removed
+  detectionMethods++;
+  if (isBaitElementRemoved()) {
+    blockedCount++;
+  }
+  
   // Determine if an ad blocker is active based on multiple signals
   const isBlocked = blockedCount > 0;
-  console.log(`Final adblock detection result: ${isBlocked ? "BLOCKED" : "NOT BLOCKED"} (${blockedCount} indicators)`);
+  console.log(`Final adblock detection result: ${isBlocked ? "BLOCKED" : "NOT BLOCKED"} (${blockedCount} indicators of ${detectionMethods})`);
   
   return isBlocked;
+};
+
+// Force a fresh check that ignores any previous bypass
+export const forceCheckForAdBlocker = async (): Promise<boolean> => {
+  // Clear any stored bypass
+  sessionStorage.removeItem('adBlockerBypass');
+  return await checkForAdBlocker();
 };

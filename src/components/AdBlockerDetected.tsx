@@ -3,15 +3,35 @@ import React, { useState } from 'react';
 import { AlertTriangle, X, ShieldX } from 'lucide-react';
 import { Button } from './ui/button';
 import { toast } from './ui/sonner';
+import { forceCheckForAdBlocker } from '../utils/adBlockDetector';
 
 export const AdBlockerDetected = ({ onContinueAnyway }: { onContinueAnyway: () => void }) => {
   const [isReloading, setIsReloading] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
   
   const handleReload = () => {
     setIsReloading(true);
     setTimeout(() => {
       window.location.reload();
     }, 500);
+  };
+
+  const handleVerify = async () => {
+    setIsVerifying(true);
+    // Recheck if ad blocker is still active
+    const stillBlocked = await forceCheckForAdBlocker();
+    
+    setIsVerifying(false);
+    if (stillBlocked) {
+      toast.error("Ad blocker is still active", {
+        description: "Please disable your ad blocker and try again"
+      });
+    } else {
+      toast.success("Ad blocker disabled successfully", {
+        description: "You can now continue browsing"
+      });
+      onContinueAnyway();
+    }
   };
 
   const handleContinue = () => {
@@ -52,8 +72,18 @@ export const AdBlockerDetected = ({ onContinueAnyway }: { onContinueAnyway: () =
             className="w-full"
             disabled={isReloading}
           >
-            {isReloading ? 'Reloading...' : 'Disable Ad Blocker & Try Again'}
+            {isReloading ? 'Reloading...' : 'Disable Ad Blocker & Reload Page'}
           </Button>
+          
+          <Button 
+            onClick={handleVerify} 
+            variant="secondary" 
+            className="w-full"
+            disabled={isVerifying}
+          >
+            {isVerifying ? 'Checking...' : 'I\'ve Disabled My Ad Blocker'}
+          </Button>
+          
           <Button 
             onClick={handleContinue}
             variant="outline" 
