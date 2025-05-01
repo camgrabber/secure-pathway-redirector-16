@@ -1,10 +1,10 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import WhatsAppButton from './social/WhatsAppButton';
-import InstagramButton from './social/InstagramButton';
-import TelegramButton from './social/TelegramButton';
-import TwitterButton from './social/TwitterButton';
+import { WhatsAppButton } from './social/WhatsAppButton';
+import { InstagramButton } from './social/InstagramButton';
+import { TelegramButton } from './social/TelegramButton';
+import { TwitterButton } from './social/TwitterButton';
 import { useSettingsManager } from '@/utils/settingsManager';
 
 export const SocialButtons = () => {
