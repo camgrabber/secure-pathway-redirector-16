@@ -34,11 +34,11 @@ export const ensureAdUnitsTableExists = async (): Promise<void> => {
     if (tableCheckError) {
       console.log("Table may not exist, attempting to create it");
       
-      // Fix: Casting types to avoid TypeScript errors
-      const { error: createTableError } = await supabase.rpc(
-        'create_ad_units_table_if_not_exists' as string,
-        {} as any
-      );
+      // Fix: Use type assertion for the whole RPC call to avoid TypeScript errors
+      const { error: createTableError } = await (supabase.rpc(
+        'create_ad_units_table_if_not_exists',
+        {}
+      ) as unknown as Promise<{ error: any }>);
       
       if (createTableError) {
         console.error("Failed to create table:", createTableError);
