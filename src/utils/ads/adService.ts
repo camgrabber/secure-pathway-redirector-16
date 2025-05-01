@@ -2,137 +2,154 @@
 import { supabase } from '@/integrations/supabase/client';
 import { AdUnit } from './types';
 
-// Load ads from Supabase
-export const loadAds = async (): Promise<AdUnit[]> => {
+/**
+ * Fetches all ad units from the database
+ */
+export const fetchAllAdUnits = async (): Promise<AdUnit[]> => {
   try {
-    console.log("Loading ad units from Supabase...");
     const { data, error } = await supabase
       .from('ad_units')
-      .select('*');
-    
+      .select('*')
+      .order('position');
+      
     if (error) {
-      console.error('Failed to load ads:', error);
+      console.error('Error fetching ad units:', error);
       throw error;
     }
     
-    console.log("Ad units loaded:", data?.length || 0);
-    return data || [];
-  } catch (e) {
-    console.error('Failed to load ads:', e);
+    // Properly cast the data to AdUnit type, ensuring priority is handled correctly
+    return (data || []) as AdUnit[];
+  } catch (error) {
+    console.error('Error in fetchAllAdUnits:', error);
     return [];
   }
 };
 
-// Check if the table exists and create it if needed
-export const ensureAdUnitsTableExists = async (): Promise<void> => {
+/**
+ * Fetches active ads units by position
+ */
+export const fetchAdsByPosition = async (position: string): Promise<AdUnit[]> => {
   try {
-    // Check if the ad_units table exists
-    const { error: tableCheckError } = await supabase
-      .from('ad_units')
-      .select('count(*)', { count: 'exact', head: true });
-    
-    if (tableCheckError) {
-      console.log("Table may not exist, attempting to create it");
-      
-      // Use explicit type casting with the generic Supabase client method
-      const { error: createTableError } = await (supabase.rpc as any)(
-        'create_ad_units_table_if_not_exists',
-        {}
-      );
-      
-      if (createTableError) {
-        console.error("Failed to create table:", createTableError);
-      }
-    }
-  } catch (e) {
-    console.error('Error checking/creating table:', e);
-  }
-};
-
-// Add a new ad unit
-export const addAdUnit = async (adUnit: Omit<AdUnit, 'id'>): Promise<AdUnit | null> => {
-  try {
-    console.log("Adding new ad unit:", adUnit);
-    
-    // Ensure table exists
-    await ensureAdUnitsTableExists();
-    
-    const newAdUnit = {
-      ...adUnit,
-      id: `ad-${Date.now()}`
-    };
-    
     const { data, error } = await supabase
       .from('ad_units')
-      .insert([newAdUnit])
-      .select();
-    
+      .select('*')
+      .eq('position', position)
+      .eq('active', true);
+      
     if (error) {
-      console.error("Error inserting ad unit:", error);
+      console.error(`Error fetching ads for position ${position}:`, error);
       throw error;
     }
     
-    console.log("Ad unit added successfully:", data);
-    return data[0];
-  } catch (e) {
-    console.error('Failed to add ad unit:', e);
-    throw e;
+    return (data || []) as AdUnit[];
+  } catch (error) {
+    console.error('Error in fetchAdsByPosition:', error);
+    return [];
   }
 };
 
-// Update an ad unit
-export const updateAdUnit = async (id: string, updates: Partial<AdUnit>): Promise<void> => {
+/**
+ * Creates a new ad unit in the database
+ */
+export const createAdUnit = async (adUnit: Omit<AdUnit, 'id'>): Promise<AdUnit | null> => {
   try {
-    console.log("Updating ad unit:", id, updates);
-    
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('ad_units')
-      .update(updates)
-      .eq('id', id);
-    
-    if (error) throw error;
-    
-    console.log("Ad unit updated successfully");
-  } catch (e) {
-    console.error('Failed to update ad unit:', e);
-    throw e;
-  }
-};
-
-// Delete an ad unit
-export const deleteAdUnit = async (id: string): Promise<void> => {
-  try {
-    console.log("Deleting ad unit:", id);
-    
-    const { error } = await supabase
-      .from('ad_units')
-      .delete()
-      .eq('id', id);
-    
-    if (error) throw error;
-    
-    console.log("Ad unit deleted successfully");
-  } catch (e) {
-    console.error('Failed to delete ad unit:', e);
-    throw e;
-  }
-};
-
-// Reset to defaults (clear all ads)
-export const resetToDefaults = async (): Promise<void> => {
-  try {
-    console.log("Resetting all ad units to default");
-    
-    const { error } = await supabase
-      .from('ad_units')
-      .delete()
-      .neq('id', ''); // Delete all records
+      .insert(adUnit)
+      .select()
+      .single();
       
-    if (error) throw error;
+    if (error) {
+      console.error('Error creating ad unit:', error);
+      throw error;
+    }
     
-    console.log("All ad units reset successfully");
-  } catch (e) {
-    console.error('Failed to reset ads:', e);
-    throw e;
+    return data as AdUnit;
+  } catch (error) {
+    console.error('Error in createAdUnit:', error);
+    return null;
+  }
+};
+
+/**
+ * Updates an existing ad unit in the database
+ */
+export const updateAdUnit = async (id: string, adUnit: Partial<AdUnit>): Promise<AdUnit | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('ad_units')
+      .update(adUnit)
+      .eq('id', id)
+      .select()
+      .single();
+      
+    if (error) {
+      console.error(`Error updating ad unit ${id}:`, error);
+      throw error;
+    }
+    
+    return data as AdUnit;
+  } catch (error) {
+    console.error('Error in updateAdUnit:', error);
+    return null;
+  }
+};
+
+/**
+ * Removes an ad unit from the database
+ */
+export const deleteAdUnit = async (id: string): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('ad_units')
+      .delete()
+      .eq('id', id);
+      
+    if (error) {
+      console.error(`Error deleting ad unit ${id}:`, error);
+      throw error;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Error in deleteAdUnit:', error);
+    return false;
+  }
+};
+
+/**
+ * Toggles the active status of an ad unit
+ */
+export const toggleAdActive = async (id: string): Promise<AdUnit | null> => {
+  try {
+    // First get the current state
+    const { data: currentData, error: fetchError } = await supabase
+      .from('ad_units')
+      .select('active')
+      .eq('id', id)
+      .single();
+      
+    if (fetchError) {
+      console.error(`Error fetching ad unit ${id}:`, fetchError);
+      throw fetchError;
+    }
+    
+    // Toggle the active state
+    const { data, error } = await supabase
+      .from('ad_units')
+      .update({ active: !currentData.active })
+      .eq('id', id)
+      .select()
+      .single();
+      
+    if (error) {
+      console.error(`Error toggling ad unit ${id}:`, error);
+      throw error;
+    }
+    
+    return data as AdUnit;
+  } catch (error) {
+    console.error('Error in toggleAdActive:', error);
+    return null;
   }
 };

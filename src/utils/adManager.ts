@@ -1,101 +1,157 @@
 
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { AdUnit } from './ads/types';
-import { 
-  loadAds, 
-  addAdUnit as addAdUnitService, 
-  updateAdUnit as updateAdUnitService,
-  deleteAdUnit as deleteAdUnitService,
-  resetToDefaults as resetToDefaultsService
-} from './ads/adService';
-import { subscribeToAdChanges } from './ads/adRealtimeSubscription';
-import { getActiveAdsByPosition } from './ads/adFilters';
+import { fetchAllAdUnits, fetchAdsByPosition, createAdUnit, updateAdUnit, deleteAdUnit, toggleAdActive } from './ads/adService';
+import { defaultAdUnits } from './ads/defaultAds';
 
-export type { AdUnit } from './ads/types';
+export { AdUnit };
 
+/**
+ * Hook to manage ad units in the application
+ */
 export const useAdManager = () => {
   const [adUnits, setAdUnits] = useState<AdUnit[]>([]);
   const [loading, setLoading] = useState(true);
-  const [impression, setImpression] = useState(0);
-  
-  // Used for frequency capping
-  useEffect(() => {
-    // Increment impression counter every page load
-    setImpression(prev => prev + 1);
+  const [activeAdsByPosition, setActiveAdsByPosition] = useState<Record<string, AdUnit[]>>({});
+
+  // Load ad units from database
+  const loadAdUnits = useCallback(async () => {
+    setLoading(true);
+    try {
+      const ads = await fetchAllAdUnits();
+      console.log('Loaded ad units:', ads);
+      setAdUnits(ads);
+      organizeAdsByPosition(ads);
+    } catch (error) {
+      console.error('Error loading ad units:', error);
+    } finally {
+      setLoading(false);
+    }
   }, []);
-  
-  // Load ads from Supabase on mount and set up subscription
-  useEffect(() => {
-    const fetchAds = async () => {
-      setLoading(true);
-      try {
-        const ads = await loadAds();
-        setAdUnits(ads);
-      } finally {
-        setLoading(false);
+
+  // Organize ads by position for easier access
+  const organizeAdsByPosition = useCallback((ads: AdUnit[]) => {
+    const adsByPosition: Record<string, AdUnit[]> = {};
+    
+    ads.filter(ad => ad.active).forEach(ad => {
+      if (!adsByPosition[ad.position]) {
+        adsByPosition[ad.position] = [];
       }
-    };
-    
-    fetchAds();
-    
-    // Set up subscription to realtime changes
-    const unsubscribe = subscribeToAdChanges(() => {
-      fetchAds(); // Reload ads when changes occur
+      adsByPosition[ad.position].push(ad);
     });
     
-    return unsubscribe;
+    setActiveAdsByPosition(adsByPosition);
   }, []);
-  
+
+  // Get active ads for a specific position
+  const getActiveAdsByPosition = useCallback((position: string): AdUnit[] => {
+    return activeAdsByPosition[position] || [];
+  }, [activeAdsByPosition]);
+
   // Add a new ad unit
-  const addAdUnit = async (adUnit: Omit<AdUnit, 'id'>) => {
-    const newAd = await addAdUnitService(adUnit);
+  const addAdUnit = useCallback(async (ad: Omit<AdUnit, 'id'>) => {
+    const newAd = await createAdUnit(ad);
+    if (newAd) {
+      setAdUnits(prev => [...prev, newAd]);
+      if (newAd.active) {
+        setActiveAdsByPosition(prev => {
+          const updated = {...prev};
+          if (!updated[newAd.position]) {
+            updated[newAd.position] = [];
+          }
+          updated[newAd.position] = [...updated[newAd.position], newAd];
+          return updated;
+        });
+      }
+    }
     return newAd;
-  };
-  
-  // Update an ad unit
-  const updateAdUnit = async (id: string, updates: Partial<AdUnit>) => {
-    await updateAdUnitService(id, updates);
-  };
-  
+  }, []);
+
+  // Update an existing ad unit
+  const updateAdUnit = useCallback(async (id: string, updates: Partial<AdUnit>) => {
+    const updatedAd = await updateAdUnit(id, updates);
+    if (updatedAd) {
+      setAdUnits(prev => prev.map(ad => ad.id === id ? updatedAd : ad));
+      // Re-organize ads by position in case position or active status changed
+      loadAdUnits();
+    }
+    return updatedAd;
+  }, [loadAdUnits]);
+
   // Delete an ad unit
-  const deleteAdUnit = async (id: string) => {
-    await deleteAdUnitService(id);
-  };
-  
-  // Toggle ad unit active state
-  const toggleAdActive = async (id: string) => {
-    const adUnit = adUnits.find(ad => ad.id === id);
-    if (!adUnit) {
-      console.error("Ad unit not found:", id);
-      return;
+  const deleteAdUnit = useCallback(async (id: string) => {
+    const success = await deleteAdUnit(id);
+    if (success) {
+      setAdUnits(prev => prev.filter(ad => ad.id !== id));
+      setActiveAdsByPosition(prev => {
+        const updated = {...prev};
+        for (const position in updated) {
+          updated[position] = updated[position].filter(ad => ad.id !== id);
+          if (updated[position].length === 0) {
+            delete updated[position];
+          }
+        }
+        return updated;
+      });
     }
-    
+    return success;
+  }, []);
+
+  // Toggle active status of an ad unit
+  const toggleAdActive = useCallback(async (id: string) => {
+    const updatedAd = await toggleAdActive(id);
+    if (updatedAd) {
+      setAdUnits(prev => prev.map(ad => ad.id === id ? updatedAd : ad));
+      // Re-organize ads by position to update active ads
+      loadAdUnits();
+    }
+    return updatedAd;
+  }, [loadAdUnits]);
+
+  // Reset to default ad units
+  const resetToDefaults = useCallback(async () => {
     try {
-      console.log("Toggling ad unit active state:", id, !adUnit.active);
+      // Delete all existing ad units first
+      const { error } = await supabase
+        .from('ad_units')
+        .delete()
+        .neq('id', '0'); // Using neq with a non-existent ID to delete all
+        
+      if (error) throw error;
+
+      // Then create the default ones
+      for (const ad of defaultAdUnits) {
+        await createAdUnit(ad);
+      }
       
-      await updateAdUnit(id, { active: !adUnit.active });
-      console.log("Ad unit active state toggled successfully");
-    } catch (e) {
-      console.error('Failed to toggle ad state:', e);
-      throw e;
+      // Reload from database
+      loadAdUnits();
+      
+      return true;
+    } catch (error) {
+      console.error('Error resetting to defaults:', error);
+      return false;
     }
-  };
+  }, [loadAdUnits]);
+
+  // Initial load
+  useEffect(() => {
+    loadAdUnits();
+  }, [loadAdUnits]);
   
-  // Reset to defaults (clear all ads)
-  const resetToDefaults = async () => {
-    await resetToDefaultsService();
-  };
-  
+  // Return the hook interface
   return {
     adUnits,
     loading,
-    impression,
+    getActiveAdsByPosition,
     addAdUnit,
     updateAdUnit,
     deleteAdUnit,
     toggleAdActive,
     resetToDefaults,
-    getActiveAdsByPosition: (position: string) => 
-      getActiveAdsByPosition(adUnits, position, impression),
+    reloadAds: loadAdUnits
   };
 };
+
+// Import supabase only for the resetToDefaults function
+import { supabase } from '../integrations/supabase/client';
