@@ -41,11 +41,19 @@ export const useSettingsManager = () => {
   const updateSettings = async (updates: Partial<AppSettings>) => {
     try {
       console.log("SettingsManager: Updating settings with:", updates);
+      
+      // Log the current settings
+      console.log("SettingsManager: Current settings before update:", settings);
+      
       const success = await settingsService.updateSettings(updates);
       if (!success) throw new Error('Update failed');
       
       // Apply updates to local state immediately for UI responsiveness
       setSettings(prevSettings => ({ ...prevSettings, ...updates }));
+      
+      // Log the updated settings
+      console.log("SettingsManager: Applied updates to state:", updates);
+      console.log("SettingsManager: New settings state:", { ...settings, ...updates });
       
       // Force refresh after update to ensure consistency
       setTimeout(() => {

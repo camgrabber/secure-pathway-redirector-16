@@ -98,6 +98,9 @@ export const SecurityTab = () => {
         url = 'https://' + url;
       }
       
+      // Log the attempt to update the destination URL
+      console.log('Attempting to update defaultDestinationUrl to:', url);
+      
       const result = await updateSettings({
         defaultDestinationUrl: url
       });
@@ -113,6 +116,8 @@ export const SecurityTab = () => {
           title: 'Default Destination Updated',
           description: 'Default destination URL has been saved',
         });
+        
+        console.log('Default destination updated successfully to:', url);
       } else {
         throw new Error('Update returned no success indication');
       }
@@ -161,6 +166,15 @@ export const SecurityTab = () => {
         });
     }
   };
+
+  // Update local state when settings change from external sources
+  React.useEffect(() => {
+    setFormValues(prevValues => ({
+      ...prevValues,
+      adminUsername: settings.adminUsername || '',
+      defaultDestinationUrl: settings.defaultDestinationUrl || 'https://example.com'
+    }));
+  }, [settings]);
 
   return (
     <div className="grid grid-cols-1 gap-6">

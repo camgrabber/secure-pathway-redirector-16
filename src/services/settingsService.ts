@@ -84,20 +84,21 @@ export const settingsService = {
       console.log('SettingsService: Processed updates:', processedUpdates);
       console.log('SettingsService: Final settings to save:', updatedSettings);
       
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('app_settings')
         .update({ 
           setting_value: settingsAsJsonCompatible,
           updated_at: new Date().toISOString()
         })
-        .eq('id', SETTINGS_ID);
+        .eq('id', SETTINGS_ID)
+        .select();
       
       if (error) {
         console.error('SettingsService: Failed to update settings:', error);
         throw error;
       }
       
-      console.log('SettingsService: Settings updated successfully');
+      console.log('SettingsService: Settings updated successfully', data);
       return true;
     } catch (e) {
       console.error('SettingsService: Failed to update settings:', e);
