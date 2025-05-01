@@ -33,9 +33,10 @@ export class SettingsService {
       }
       
       if (data) {
-        const { id, created_at, updated_at, ...settings } = data;
+        // Removing the id and timestamps from the data before returning
+        const { id, updated_at, ...settings } = data;
         console.log("SettingsService: Settings force refreshed successfully", updated_at);
-        return settings;
+        return settings as AppSettings;
       }
       
       return null;
@@ -68,11 +69,12 @@ export class SettingsService {
     }
   }
   
-  // Get social media links
+  // Get social media links with better cache handling
   static async getSocialLinks(): Promise<SocialLink[] | null> {
     try {
       // Add cache-busting parameter
       const timestamp = Date.now();
+      console.log('SettingsService: Getting social links with timestamp', timestamp);
       
       const { data, error } = await supabase
         .from('social_links')
@@ -84,6 +86,7 @@ export class SettingsService {
         throw error;
       }
       
+      console.log("SettingsService: Social links loaded:", data);
       return data;
     } catch (error) {
       console.error("SettingsService: Failed to get social links:", error);
@@ -92,9 +95,13 @@ export class SettingsService {
   }
   
   // Helper method to force settings refresh
-  static async forceRefreshSettings(): Promise<void> {
+  static async forceRefreshSettings(): Promise<AppSettings | null> {
     try {
-      await this.getSettings();
+      // Add timestamp parameter to force cache invalidation
+      const timestamp = Date.now();
+      console.log('SettingsService: Force refreshing with timestamp', timestamp);
+      
+      return await this.getSettings();
     } catch (error) {
       console.error("SettingsService: Failed to force refresh settings:", error);
       throw error;

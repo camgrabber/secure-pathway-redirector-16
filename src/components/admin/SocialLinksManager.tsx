@@ -22,7 +22,7 @@ export const SocialLinksManager = () => {
   const [loading, setLoading] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const { toast } = useToast();
-  const { refreshSettings } = useSettingsManager();
+  const { refreshSettings, updateSettings, settings } = useSettingsManager();
 
   useEffect(() => {
     loadSocialLinks();
@@ -85,6 +85,17 @@ export const SocialLinksManager = () => {
         if (error) {
           console.error(`Error updating ${link.platform}:`, error);
           throw error;
+        }
+        
+        // Update the main settings with the social link values
+        if (link.platform === 'whatsapp') {
+          await updateSettings({ whatsappUrl: link.active ? link.url : '' });
+        } else if (link.platform === 'instagram') {
+          await updateSettings({ instagramUrl: link.active ? link.url : '' });
+        } else if (link.platform === 'twitter') {
+          await updateSettings({ twitterUrl: link.active ? link.url : '' });
+        } else if (link.platform === 'telegram') {
+          await updateSettings({ telegramUrl: link.active ? link.url : '' });
         }
       }
 
@@ -226,7 +237,7 @@ export const SocialLinksManager = () => {
           </Button>
           
           <p className="text-xs text-center text-gray-500 mt-2">
-            After saving, refresh your website to see the changes.
+            Changes will appear immediately on your website.
           </p>
         </form>
       </CardContent>
