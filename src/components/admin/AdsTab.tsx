@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Plus, RefreshCw, Eye, EyeOff, Save, Trash, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -12,10 +13,12 @@ export const AdsTab = () => {
     name: string;
     position: string;
     code: string;
+    priority?: 'high' | 'normal' | 'low';
   }>({
     name: '',
     position: 'top',
     code: '',
+    priority: 'normal',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   
@@ -69,6 +72,7 @@ export const AdsTab = () => {
         name: newAdForm.name,
         position: newAdForm.position,
         code: newAdForm.code,
+        priority: newAdForm.priority,
         active: true,
       });
       
@@ -76,6 +80,7 @@ export const AdsTab = () => {
         name: '',
         position: 'top',
         code: '',
+        priority: 'normal',
       });
       
       toast({
@@ -196,8 +201,23 @@ export const AdsTab = () => {
                       >
                         <option value="top">Top</option>
                         <option value="middle">Middle</option>
-                        <option value="after-timer">After Timer</option>
                         <option value="bottom">Bottom</option>
+                        <option value="after-timer">After Timer</option>
+                        <option value="sticky">Sticky (Top of Page)</option>
+                        <option value="interstitial">Interstitial (Full Screen)</option>
+                      </select>
+                    </div>
+                    
+                    <div>
+                      <label className="text-sm font-medium block mb-1">Priority</label>
+                      <select 
+                        value={editingAd.priority || 'normal'}
+                        onChange={e => setEditingAd({...editingAd, priority: e.target.value as 'high' | 'normal' | 'low'})}
+                        className="w-full border border-gray-300 rounded-md p-2"
+                      >
+                        <option value="high">High (Load First)</option>
+                        <option value="normal">Normal</option>
+                        <option value="low">Low (Load Last)</option>
                       </select>
                     </div>
                     
@@ -228,7 +248,16 @@ export const AdsTab = () => {
                     <div className="flex justify-between items-start mb-2">
                       <div>
                         <h3 className="font-medium">{ad.name}</h3>
-                        <p className="text-sm text-gray-500">Position: {ad.position}</p>
+                        <div className="flex flex-wrap gap-2 mt-1">
+                          <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                            Position: {ad.position}
+                          </span>
+                          {ad.priority && (
+                            <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                              Priority: {ad.priority}
+                            </span>
+                          )}
+                        </div>
                       </div>
                       <div className="flex items-center space-x-2">
                         <Button 
@@ -250,15 +279,7 @@ export const AdsTab = () => {
                         <Button 
                           variant="outline" 
                           size="sm" 
-                          onClick={() => {
-                            if (window.confirm('Are you sure you want to delete this ad?')) {
-                              handleDeleteAd(ad.id);
-                              toast({
-                                title: 'Ad Deleted',
-                                description: 'Ad unit has been removed',
-                              });
-                            }
-                          }}
+                          onClick={() => handleDeleteAd(ad.id)}
                           title="Delete ad"
                         >
                           <Trash className="h-4 w-4 text-red-500" />
@@ -303,9 +324,30 @@ export const AdsTab = () => {
             >
               <option value="top">Top</option>
               <option value="middle">Middle</option>
-              <option value="after-timer">After Timer</option>
               <option value="bottom">Bottom</option>
+              <option value="after-timer">After Timer</option>
+              <option value="sticky">Sticky (Top of Page)</option>
+              <option value="interstitial">Interstitial (Full Screen)</option>
             </select>
+            <p className="mt-1 text-xs text-gray-500">
+              Choose where this ad will appear on the page
+            </p>
+          </div>
+          
+          <div>
+            <label className="text-sm font-medium block mb-1">Priority</label>
+            <select 
+              value={newAdForm.priority}
+              onChange={e => setNewAdForm({...newAdForm, priority: e.target.value as 'high' | 'normal' | 'low'})}
+              className="w-full border border-gray-300 rounded-md p-2"
+            >
+              <option value="high">High (Load First)</option>
+              <option value="normal">Normal</option>
+              <option value="low">Low (Load Last)</option>
+            </select>
+            <p className="mt-1 text-xs text-gray-500">
+              High priority ads load first and get better placement
+            </p>
           </div>
           
           <div>

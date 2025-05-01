@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ExternalLink } from 'lucide-react';
@@ -19,7 +20,9 @@ const InitialRedirect = () => {
   const [destinationUrl, setDestinationUrl] = useState('');
   const { getActiveAdsByPosition } = useAdManager();
   const { settings } = useSettingsManager();
+  
   const middleAds = getActiveAdsByPosition('middle');
+  const afterTimerAds = getActiveAdsByPosition('after-timer');
   
   useEffect(() => {
     // Extract the destination URL from state or use default
@@ -72,7 +75,7 @@ const InitialRedirect = () => {
             {middleAds.length > 0 && (
               <div className="my-4">
                 {middleAds.map(ad => (
-                  <AdUnit key={ad.id} code={ad.code} />
+                  <AdUnit key={ad.id} code={ad.code} position="middle" priority="high" />
                 ))}
               </div>
             )}
@@ -83,15 +86,26 @@ const InitialRedirect = () => {
             />
             
             {timerComplete && (
-              <div className="text-center animate-fade-in">
-                <Button 
-                  onClick={handleContinue}
-                  className="px-8 py-6 text-lg bg-gradient-to-r from-redirector-primary to-redirector-primary-dark hover:opacity-90 transition-opacity animate-pulse"
-                >
-                  <ExternalLink className="mr-2 h-5 w-5" />
-                  {settings.initialButtonText}
-                </Button>
-              </div>
+              <>
+                {/* Display ads after the timer completes */}
+                {afterTimerAds.length > 0 && (
+                  <div className="my-6">
+                    {afterTimerAds.map(ad => (
+                      <AdUnit key={ad.id} code={ad.code} position="after-timer" priority="high" />
+                    ))}
+                  </div>
+                )}
+              
+                <div className="text-center animate-fade-in">
+                  <Button 
+                    onClick={handleContinue}
+                    className="px-8 py-6 text-lg bg-gradient-to-r from-redirector-primary to-redirector-primary-dark hover:opacity-90 transition-opacity animate-pulse"
+                  >
+                    <ExternalLink className="mr-2 h-5 w-5" />
+                    {settings.initialButtonText}
+                  </Button>
+                </div>
+              </>
             )}
           </div>
         )}

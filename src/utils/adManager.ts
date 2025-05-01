@@ -8,11 +8,21 @@ export interface AdUnit {
   position: string;
   code: string;
   active: boolean;
+  priority?: 'high' | 'normal' | 'low';
+  viewThreshold?: number;
+  frequency?: number;
 }
 
 export const useAdManager = () => {
   const [adUnits, setAdUnits] = useState<AdUnit[]>([]);
   const [loading, setLoading] = useState(true);
+  const [impression, setImpression] = useState(0);
+  
+  // Used for frequency capping
+  useEffect(() => {
+    // Increment impression counter every page load
+    setImpression(prev => prev + 1);
+  }, []);
   
   // Load ads from Supabase on mount
   useEffect(() => {
@@ -166,12 +176,32 @@ export const useAdManager = () => {
   
   // Get all active ad units for a position
   const getActiveAdsByPosition = (position: string) => {
-    return adUnits.filter(ad => ad.active && ad.position === position);
+    const activeAds = adUnits.filter(ad => {
+      // Basic active check
+      if (!ad.active) return false;
+      
+      // Position check
+      if (ad.position !== position) return false;
+      
+      // Frequency capping check
+      if (ad.frequency && impression % ad.frequency !== 0) return false;
+      
+      return true;
+    });
+    
+    // Sort by priority if available
+    return activeAds.sort((a, b) => {
+      const priorityValues = { high: 3, normal: 2, low: 1, undefined: 0 };
+      const priorityA = priorityValues[a.priority || 'undefined'];
+      const priorityB = priorityValues[b.priority || 'undefined'];
+      return priorityB - priorityA;
+    });
   };
   
   return {
     adUnits,
     loading,
+    impression,
     addAdUnit,
     updateAdUnit,
     deleteAdUnit,
