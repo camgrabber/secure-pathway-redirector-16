@@ -57,7 +57,7 @@ export const SocialButtons = () => {
   }
   
   return (
-    <div className="fixed top-4 right-4 flex gap-2 z-50 p-2 bg-white/30 backdrop-blur-sm rounded-lg shadow-sm">
+    <div className="fixed right-4 top-1/2 transform -translate-y-1/2 flex flex-col gap-2 z-50 p-2 bg-white/30 backdrop-blur-sm rounded-lg shadow-sm">
       {settings.whatsappUrl && <WhatsAppButton url={settings.whatsappUrl} />}
       {settings.instagramUrl && <InstagramButton url={settings.instagramUrl} />}
       {settings.telegramUrl && <TelegramButton url={settings.telegramUrl} />}
