@@ -1,17 +1,17 @@
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { AdUnit } from './ads/types';
+import { 
+  loadAds, 
+  addAdUnit as addAdUnitService, 
+  updateAdUnit as updateAdUnitService,
+  deleteAdUnit as deleteAdUnitService,
+  resetToDefaults as resetToDefaultsService
+} from './ads/adService';
+import { subscribeToAdChanges } from './ads/adRealtimeSubscription';
+import { getActiveAdsByPosition } from './ads/adFilters';
 
-export interface AdUnit {
-  id: string;
-  name: string;
-  position: string;
-  code: string;
-  active: boolean;
-  priority?: 'high' | 'normal' | 'low';
-  viewThreshold?: number;
-  frequency?: number;
-}
+export type { AdUnit } from './ads/types';
 
 export const useAdManager = () => {
   const [adUnits, setAdUnits] = useState<AdUnit[]>([]);
@@ -24,135 +24,42 @@ export const useAdManager = () => {
     setImpression(prev => prev + 1);
   }, []);
   
-  // Load ads from Supabase on mount
+  // Load ads from Supabase on mount and set up subscription
   useEffect(() => {
-    const loadAds = async () => {
+    const fetchAds = async () => {
+      setLoading(true);
       try {
-        setLoading(true);
-        console.log("Loading ad units from Supabase...");
-        const { data, error } = await supabase
-          .from('ad_units')
-          .select('*');
-        
-        if (error) {
-          console.error('Failed to load ads:', error);
-          throw error;
-        }
-        
-        console.log("Ad units loaded:", data?.length || 0);
-        setAdUnits(data || []);
-      } catch (e) {
-        console.error('Failed to load ads:', e);
-        setAdUnits([]);
+        const ads = await loadAds();
+        setAdUnits(ads);
       } finally {
         setLoading(false);
       }
     };
     
-    loadAds();
+    fetchAds();
     
-    // Subscribe to realtime changes
-    console.log("Setting up realtime subscription for ad_units...");
-    const channel = supabase
-      .channel('ad_units_changes')
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'ad_units' },
-        (payload) => {
-          console.log("Received real-time update for ad_units:", payload);
-          loadAds(); // Reload ads when changes occur
-        }
-      )
-      .subscribe();
+    // Set up subscription to realtime changes
+    const unsubscribe = subscribeToAdChanges(() => {
+      fetchAds(); // Reload ads when changes occur
+    });
     
-    console.log("Realtime subscription activated");
-      
-    return () => {
-      console.log("Cleaning up realtime subscription");
-      channel.unsubscribe();
-    };
+    return unsubscribe;
   }, []);
   
   // Add a new ad unit
   const addAdUnit = async (adUnit: Omit<AdUnit, 'id'>) => {
-    try {
-      console.log("Adding new ad unit:", adUnit);
-      
-      // Check if the ad_units table exists
-      const { error: tableCheckError } = await supabase
-        .from('ad_units')
-        .select('count(*)', { count: 'exact', head: true });
-      
-      if (tableCheckError) {
-        console.log("Table may not exist, attempting to create it");
-        
-        // Create the table if it doesn't exist (only run once)
-        // Fix: Pass an empty object instead of no parameters to the RPC function
-        const { error: createTableError } = await supabase.rpc('create_ad_units_table_if_not_exists', {});
-        if (createTableError) {
-          console.error("Failed to create table:", createTableError);
-          // Continue anyway, as the table might exist but with a different error
-        }
-      }
-      
-      const newAdUnit = {
-        ...adUnit,
-        id: `ad-${Date.now()}`
-      };
-      
-      const { data, error } = await supabase
-        .from('ad_units')
-        .insert([newAdUnit])
-        .select();
-      
-      if (error) {
-        console.error("Error inserting ad unit:", error);
-        throw error;
-      }
-      
-      console.log("Ad unit added successfully:", data);
-      return data[0];
-    } catch (e) {
-      console.error('Failed to add ad unit:', e);
-      throw e;
-    }
+    const newAd = await addAdUnitService(adUnit);
+    return newAd;
   };
   
   // Update an ad unit
   const updateAdUnit = async (id: string, updates: Partial<AdUnit>) => {
-    try {
-      console.log("Updating ad unit:", id, updates);
-      
-      const { error } = await supabase
-        .from('ad_units')
-        .update(updates)
-        .eq('id', id);
-      
-      if (error) throw error;
-      
-      console.log("Ad unit updated successfully");
-    } catch (e) {
-      console.error('Failed to update ad unit:', e);
-      throw e;
-    }
+    await updateAdUnitService(id, updates);
   };
   
   // Delete an ad unit
   const deleteAdUnit = async (id: string) => {
-    try {
-      console.log("Deleting ad unit:", id);
-      
-      const { error } = await supabase
-        .from('ad_units')
-        .delete()
-        .eq('id', id);
-      
-      if (error) throw error;
-      
-      console.log("Ad unit deleted successfully");
-    } catch (e) {
-      console.error('Failed to delete ad unit:', e);
-      throw e;
-    }
+    await deleteAdUnitService(id);
   };
   
   // Toggle ad unit active state
@@ -176,45 +83,7 @@ export const useAdManager = () => {
   
   // Reset to defaults (clear all ads)
   const resetToDefaults = async () => {
-    try {
-      console.log("Resetting all ad units to default");
-      
-      const { error } = await supabase
-        .from('ad_units')
-        .delete()
-        .neq('id', ''); // Delete all records
-        
-      if (error) throw error;
-      
-      console.log("All ad units reset successfully");
-    } catch (e) {
-      console.error('Failed to reset ads:', e);
-      throw e;
-    }
-  };
-  
-  // Get all active ad units for a position
-  const getActiveAdsByPosition = (position: string) => {
-    const activeAds = adUnits.filter(ad => {
-      // Basic active check
-      if (!ad.active) return false;
-      
-      // Position check
-      if (ad.position !== position) return false;
-      
-      // Frequency capping check
-      if (ad.frequency && impression % ad.frequency !== 0) return false;
-      
-      return true;
-    });
-    
-    // Sort by priority if available
-    return activeAds.sort((a, b) => {
-      const priorityValues = { high: 3, normal: 2, low: 1, undefined: 0 };
-      const priorityA = priorityValues[a.priority || 'undefined'];
-      const priorityB = priorityValues[b.priority || 'undefined'];
-      return priorityB - priorityA;
-    });
+    await resetToDefaultsService();
   };
   
   return {
@@ -226,6 +95,7 @@ export const useAdManager = () => {
     deleteAdUnit,
     toggleAdActive,
     resetToDefaults,
-    getActiveAdsByPosition,
+    getActiveAdsByPosition: (position: string) => 
+      getActiveAdsByPosition(adUnits, position, impression),
   };
 };
