@@ -13,6 +13,7 @@ import NotFound from "./pages/NotFound";
 import Admin from "./pages/Admin";
 import { AdBlockerDetected } from "./components/AdBlockerDetected";
 import { checkForAdBlocker, forceCheckForAdBlocker } from "./utils/adBlockDetector";
+import { useSettingsManager } from "./utils/settingsManager";
 
 // Create a new QueryClient for React Query
 const queryClient = new QueryClient();
@@ -23,11 +24,20 @@ const AdBlockerDetectionWrapper = ({ children }: { children: React.ReactNode }) 
   const [adBlockerDetected, setAdBlockerDetected] = useState<boolean | null>(null);
   const [bypassAdBlocker, setBypassAdBlocker] = useState(false);
   const [checkComplete, setCheckComplete] = useState(false);
+  const { refreshSettings } = useSettingsManager();
 
   // Effect for initial load and route changes
   useEffect(() => {
     const checkAdBlocker = async () => {
       console.log("Checking for ad blocker on route change:", location.pathname);
+      
+      // Refresh settings on route change to ensure we have latest data
+      try {
+        await refreshSettings();
+        console.log("Settings refreshed on route change");
+      } catch (e) {
+        console.error("Failed to refresh settings on route change", e);
+      }
       
       // Check if user has bypassed for this session only
       const sessionBypass = sessionStorage.getItem('adBlockerBypass') === 'true';
@@ -45,7 +55,7 @@ const AdBlockerDetectionWrapper = ({ children }: { children: React.ReactNode }) 
     };
     
     checkAdBlocker();
-  }, [location.pathname]);
+  }, [location.pathname, refreshSettings]);
 
   const handleContinueAnyway = () => {
     setBypassAdBlocker(true);
