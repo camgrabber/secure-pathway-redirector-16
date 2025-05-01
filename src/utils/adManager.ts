@@ -86,7 +86,8 @@ export const useAdManager = () => {
         console.log("Table may not exist, attempting to create it");
         
         // Create the table if it doesn't exist (only run once)
-        const { error: createTableError } = await supabase.rpc('create_ad_units_table_if_not_exists');
+        // Fix: Use an empty object as parameter for the RPC call instead of a string
+        const { error: createTableError } = await supabase.rpc('create_ad_units_table_if_not_exists', {});
         if (createTableError) {
           console.error("Failed to create table:", createTableError);
           // Continue anyway, as the table might exist but with a different error
