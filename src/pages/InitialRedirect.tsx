@@ -30,6 +30,8 @@ const InitialRedirect = () => {
     
     if (stateUrl) {
       try {
+        // Log for debugging
+        console.log('InitialRedirect: Received URL from state:', stateUrl);
         setDestinationUrl(stateUrl);
       } catch (e) {
         console.error('Invalid URL:', e);
@@ -38,12 +40,19 @@ const InitialRedirect = () => {
           description: 'Invalid URL provided.',
           variant: 'destructive',
         });
+        console.log('InitialRedirect: Using default URL after error:', settings.defaultDestinationUrl);
         setDestinationUrl(settings.defaultDestinationUrl);
       }
     } else {
+      console.log('InitialRedirect: No URL in state, using default:', settings.defaultDestinationUrl);
       setDestinationUrl(settings.defaultDestinationUrl);
     }
   }, [location.state, toast, settings.defaultDestinationUrl]);
+
+  // Log when destinationUrl changes
+  useEffect(() => {
+    console.log('InitialRedirect: Destination URL set to:', destinationUrl);
+  }, [destinationUrl]);
 
   const handleProgressComplete = () => {
     setLoadingComplete(true);
@@ -54,6 +63,7 @@ const InitialRedirect = () => {
   };
 
   const handleContinue = () => {
+    console.log('InitialRedirect: Continuing to security-check with URL:', destinationUrl);
     // Use state to pass the URL instead of query parameters
     navigate('/security-check', { state: { url: destinationUrl } });
   };
