@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,9 +16,17 @@ export const DefaultDestinationCard: React.FC<DefaultDestinationCardProps> = ({
   initialUrl
 }) => {
   const { toast } = useToast();
-  const { updateSettings } = useSettingsManager();
+  const { updateSettings, settings } = useSettingsManager();
   const [loading, setLoading] = useState(false);
   const [defaultDestinationUrl, setDefaultDestinationUrl] = useState(initialUrl);
+
+  // Update local state when settings change
+  useEffect(() => {
+    console.log("DefaultDestinationCard: Settings updated, current URL:", settings.defaultDestinationUrl);
+    if (settings.defaultDestinationUrl) {
+      setDefaultDestinationUrl(settings.defaultDestinationUrl);
+    }
+  }, [settings.defaultDestinationUrl]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setDefaultDestinationUrl(e.target.value);
@@ -30,11 +38,10 @@ export const DefaultDestinationCard: React.FC<DefaultDestinationCardProps> = ({
     try {
       // Basic URL validation
       let url = defaultDestinationUrl;
-      if (!/^https?:\/\//i.test(url)) {
+      if (url && !/^https?:\/\//i.test(url)) {
         url = 'https://' + url;
       }
       
-      // Log the attempt to update the destination URL
       console.log('Attempting to update defaultDestinationUrl to:', url);
       
       const result = await updateSettings({
@@ -42,12 +49,9 @@ export const DefaultDestinationCard: React.FC<DefaultDestinationCardProps> = ({
       });
       
       if (result && result.success) {
-        // Update local form value with potentially modified URL
-        setDefaultDestinationUrl(url);
-        
         toast({
           title: 'Default Destination Updated',
-          description: 'Default destination URL has been saved',
+          description: `Default destination URL has been saved: ${url}`,
         });
         
         console.log('Default destination updated successfully to:', url);
@@ -83,6 +87,9 @@ export const DefaultDestinationCard: React.FC<DefaultDestinationCardProps> = ({
               onChange={handleInputChange}
               placeholder="https://example.com"
             />
+            <p className="text-xs text-gray-500">
+              Current value in settings: {settings.defaultDestinationUrl || 'Not set'}
+            </p>
           </div>
           <Button 
             onClick={handleSaveDefaultDestination} 

@@ -114,9 +114,10 @@ export const settingsService = {
       const timestamp = new Date().getTime();
       console.log(`SettingsService: Adding cache-busting timestamp ${timestamp}`);
       
+      // Explicitly use a non-caching query
       const { data, error } = await supabase
         .from('app_settings')
-        .select('setting_value')
+        .select('setting_value, updated_at')
         .eq('id', SETTINGS_ID)
         .maybeSingle();
       
@@ -126,7 +127,7 @@ export const settingsService = {
       }
       
       if (data?.setting_value) {
-        console.log('SettingsService: Settings force refreshed successfully');
+        console.log('SettingsService: Settings force refreshed successfully', data.updated_at);
         return data.setting_value as unknown as AppSettings;
       }
       

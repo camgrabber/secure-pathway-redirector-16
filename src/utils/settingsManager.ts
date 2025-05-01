@@ -35,7 +35,7 @@ export const useSettingsManager = () => {
   const refreshSettings = useCallback(async () => {
     console.log("SettingsManager: Manually refreshing settings from database");
     await loadSettings();
-    return true;
+    return { success: true };
   }, [loadSettings]);
   
   const updateSettings = async (updates: Partial<AppSettings>) => {
@@ -56,10 +56,7 @@ export const useSettingsManager = () => {
       console.log("SettingsManager: New settings state:", { ...settings, ...updates });
       
       // Force refresh after update to ensure consistency
-      setTimeout(() => {
-        console.log("SettingsManager: Performing delayed refresh after update");
-        refreshSettings();
-      }, 500);
+      await refreshSettings();
       
       return { success: true };
     } catch (e) {
@@ -77,9 +74,7 @@ export const useSettingsManager = () => {
       setSettings(defaultSettings);
       
       // Force a refresh after reset
-      setTimeout(() => {
-        refreshSettings();
-      }, 500);
+      await refreshSettings();
       
       return { success: true };
     } catch (e) {
@@ -104,7 +99,7 @@ export const useSettingsManager = () => {
     console.log("SettingsManager: Initial setup");
     loadSettings();
     
-    // Set up real-time subscription
+    // Set up real-time subscription with improved configuration
     console.log("SettingsManager: Setting up real-time subscription");
     const channel = supabase
       .channel('settings_changes')
