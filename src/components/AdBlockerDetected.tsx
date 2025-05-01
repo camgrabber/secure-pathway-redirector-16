@@ -34,28 +34,9 @@ export const AdBlockerDetected = ({ onContinueAnyway }: { onContinueAnyway: () =
     }
   };
 
-  const handleContinue = () => {
-    toast.info("Continuing with limited functionality", {
-      description: "Some features may not work correctly without ad capability"
-    });
-    onContinueAnyway();
-  };
-
   return (
     <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-xl max-w-md w-full p-6 relative animate-in fade-in zoom-in duration-300">
-        <div className="absolute top-4 right-4">
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={handleContinue}
-            className="h-8 w-8 rounded-full"
-          >
-            <X className="h-4 w-4" />
-            <span className="sr-only">Close</span>
-          </Button>
-        </div>
-        
         <div className="text-center mb-6">
           <div className="mx-auto rounded-full bg-red-100 w-16 h-16 flex items-center justify-center mb-4">
             <ShieldX className="h-8 w-8 text-red-600" />
@@ -82,14 +63,6 @@ export const AdBlockerDetected = ({ onContinueAnyway }: { onContinueAnyway: () =
             disabled={isVerifying}
           >
             {isVerifying ? 'Checking...' : 'I\'ve Disabled My Ad Blocker'}
-          </Button>
-          
-          <Button 
-            onClick={handleContinue}
-            variant="outline" 
-            className="w-full"
-          >
-            Continue Anyway
           </Button>
           
           <p className="text-xs text-center text-gray-500 mt-2">
