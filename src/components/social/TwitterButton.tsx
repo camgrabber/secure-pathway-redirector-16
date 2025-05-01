@@ -1,18 +1,22 @@
 
-import { TwitterIcon } from '../icons/TwitterIcon';
-import { SocialButton } from './SocialButton';
+import React from 'react';
+import { Twitter } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface TwitterButtonProps {
-  url?: string;
+  url: string;
 }
 
-export const TwitterButton = ({ url }: TwitterButtonProps) => (
-  <SocialButton
-    url={url}
-    color="black"
-    hoverColor="black/90"
-    shadowColor="black"
-  >
-    <TwitterIcon className="h-6 w-6 animate-bounce-small" />
-  </SocialButton>
-);
+export const TwitterButton = ({ url }: TwitterButtonProps) => {
+  return (
+    <Button 
+      variant="outline" 
+      size="icon" 
+      className="rounded-full bg-white hover:bg-blue-50"
+      onClick={() => window.open(url, '_blank')}
+      title="Twitter"
+    >
+      <Twitter className="h-5 w-5 text-blue-400" />
+    </Button>
+  );
+};

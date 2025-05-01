@@ -1,19 +1,22 @@
 
-import { InstagramIcon } from '../icons/InstagramIcon';
-import { SocialButton } from './SocialButton';
+import React from 'react';
+import { Instagram } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface InstagramButtonProps {
-  url?: string;
+  url: string;
 }
 
-export const InstagramButton = ({ url }: InstagramButtonProps) => (
-  <SocialButton
-    url={url}
-    color="[#833AB4]"
-    hoverColor="[#833AB4]"
-    shadowColor="[#833AB4]"
-    gradientColors={["[#833AB4]", "[#FD1D1D]", "[#F77737]"]}
-  >
-    <InstagramIcon className="h-6 w-6 animate-bounce-small" />
-  </SocialButton>
-);
+export const InstagramButton = ({ url }: InstagramButtonProps) => {
+  return (
+    <Button 
+      variant="outline" 
+      size="icon" 
+      className="rounded-full bg-white hover:bg-pink-50"
+      onClick={() => window.open(url, '_blank')}
+      title="Instagram"
+    >
+      <Instagram className="h-5 w-5 text-pink-600" />
+    </Button>
+  );
+};

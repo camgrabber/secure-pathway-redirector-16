@@ -9,9 +9,15 @@ import { useSettingsManager } from '@/utils/settingsManager';
 export const SocialButtons = () => {
   const { settings } = useSettingsManager();
   
+  // Check if we have any social links to display
+  const hasSocialLinks = settings.whatsappUrl || settings.instagramUrl || 
+                         settings.telegramUrl || settings.twitterUrl;
+  
+  if (!hasSocialLinks) return null;
+  
   return (
-    <div className="fixed top-4 right-4 flex gap-2">
-      <div className="hidden sm:flex gap-2">
+    <div className="fixed top-4 right-4 flex gap-2 z-10">
+      <div className="flex gap-2">
         {settings.whatsappUrl && <WhatsAppButton url={settings.whatsappUrl} />}
         {settings.instagramUrl && <InstagramButton url={settings.instagramUrl} />}
         {settings.telegramUrl && <TelegramButton url={settings.telegramUrl} />}
