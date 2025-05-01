@@ -1,10 +1,11 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { AdUnit } from './ads/types';
-import { fetchAllAdUnits, fetchAdsByPosition, createAdUnit, updateAdUnit, deleteAdUnit, toggleAdActive } from './ads/adService';
+import { fetchAllAdUnits, fetchAdsByPosition, createAdUnit as createAdUnitService, updateAdUnit as updateAdUnitService, deleteAdUnit as deleteAdUnitService, toggleAdActive as toggleAdActiveService } from './ads/adService';
 import { defaultAdUnits } from './ads/defaultAds';
 
-export { AdUnit };
+// Change the export to use 'export type' for TypeScript isolatedModules compatibility
+export type { AdUnit };
 
 /**
  * Hook to manage ad units in the application
@@ -50,7 +51,7 @@ export const useAdManager = () => {
 
   // Add a new ad unit
   const addAdUnit = useCallback(async (ad: Omit<AdUnit, 'id'>) => {
-    const newAd = await createAdUnit(ad);
+    const newAd = await createAdUnitService(ad);
     if (newAd) {
       setAdUnits(prev => [...prev, newAd]);
       if (newAd.active) {
@@ -69,7 +70,7 @@ export const useAdManager = () => {
 
   // Update an existing ad unit
   const updateAdUnit = useCallback(async (id: string, updates: Partial<AdUnit>) => {
-    const updatedAd = await updateAdUnit(id, updates);
+    const updatedAd = await updateAdUnitService(id, updates);
     if (updatedAd) {
       setAdUnits(prev => prev.map(ad => ad.id === id ? updatedAd : ad));
       // Re-organize ads by position in case position or active status changed
@@ -80,7 +81,7 @@ export const useAdManager = () => {
 
   // Delete an ad unit
   const deleteAdUnit = useCallback(async (id: string) => {
-    const success = await deleteAdUnit(id);
+    const success = await deleteAdUnitService(id);
     if (success) {
       setAdUnits(prev => prev.filter(ad => ad.id !== id));
       setActiveAdsByPosition(prev => {
@@ -99,7 +100,7 @@ export const useAdManager = () => {
 
   // Toggle active status of an ad unit
   const toggleAdActive = useCallback(async (id: string) => {
-    const updatedAd = await toggleAdActive(id);
+    const updatedAd = await toggleAdActiveService(id);
     if (updatedAd) {
       setAdUnits(prev => prev.map(ad => ad.id === id ? updatedAd : ad));
       // Re-organize ads by position to update active ads
@@ -121,7 +122,7 @@ export const useAdManager = () => {
 
       // Then create the default ones
       for (const ad of defaultAdUnits) {
-        await createAdUnit(ad);
+        await createAdUnitService(ad);
       }
       
       // Reload from database

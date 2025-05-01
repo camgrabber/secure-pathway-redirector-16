@@ -1,6 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { AdUnit } from './types';
+import { v4 as uuidv4 } from 'uuid';
 
 /**
  * Fetches all ad units from the database
@@ -53,9 +54,15 @@ export const fetchAdsByPosition = async (position: string): Promise<AdUnit[]> =>
  */
 export const createAdUnit = async (adUnit: Omit<AdUnit, 'id'>): Promise<AdUnit | null> => {
   try {
+    // Generate a random ID for the ad unit to fix the issue with missing id
+    const adUnitWithId = { 
+      ...adUnit, 
+      id: uuidv4(),  // Generate UUID for new ad unit
+    };
+    
     const { data, error } = await supabase
       .from('ad_units')
-      .insert(adUnit)
+      .insert(adUnitWithId)
       .select()
       .single();
       
