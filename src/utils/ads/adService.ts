@@ -35,8 +35,12 @@ export const ensureAdUnitsTableExists = async (): Promise<void> => {
       console.log("Table may not exist, attempting to create it");
       
       // Create the table if it doesn't exist (only run once)
-      // Fix: Pass an empty object instead of a string
-      const { error: createTableError } = await supabase.rpc('create_ad_units_table_if_not_exists', {});
+      // Using a type-safe approach for the RPC call
+      const { error: createTableError } = await supabase.rpc(
+        'create_ad_units_table_if_not_exists',
+        {} as Record<string, never>
+      );
+      
       if (createTableError) {
         console.error("Failed to create table:", createTableError);
         // Continue anyway, as the table might exist but with a different error
