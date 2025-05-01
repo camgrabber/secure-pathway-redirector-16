@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -21,6 +22,14 @@
     
     <meta name="robots" content="index, follow" />
     <meta name="rating" content="entertainment" />
+    <script>
+      // Handle SPA routing for Netlify deployments
+      if (window.location.pathname !== '/' && !window.location.pathname.includes('.')) {
+        const segments = window.location.pathname.split('/');
+        const lastSegment = segments[segments.length - 1];
+        console.log('Netlify SPA redirect handling:', lastSegment);
+      }
+    </script>
   </head>
 
   <body>

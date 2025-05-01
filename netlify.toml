@@ -7,3 +7,18 @@
   from = "/*"
   to = "/index.html"
   status = 200
+
+# Set cache headers for static assets
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000"
+
+# Optimize build settings
+[build]
+  publish = "dist"
+  command = "vite build"
+
+# Handle SPA routing
+[dev]
+  framework = "vite"

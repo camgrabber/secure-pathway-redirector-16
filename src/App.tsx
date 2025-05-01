@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -13,6 +14,7 @@ import Admin from "./pages/Admin";
 import { AdBlockerDetected } from "./components/AdBlockerDetected";
 import { checkForAdBlocker } from "./utils/adBlockDetector";
 
+// Create a new QueryClient for React Query
 const queryClient = new QueryClient();
 
 const App = () => {
@@ -21,6 +23,10 @@ const App = () => {
   const [checkComplete, setCheckComplete] = useState(false);
 
   useEffect(() => {
+    // Debug info for Netlify deployment
+    console.log("App component mounted");
+    console.log("Current route:", window.location.pathname);
+    
     const detectAdBlocker = async () => {
       try {
         console.log("Starting enhanced adblock detection check...");
