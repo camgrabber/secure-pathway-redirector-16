@@ -1,10 +1,10 @@
+
 import React, { useEffect, useState } from 'react';
 import { ShieldCheck } from 'lucide-react';
 import AdUnit from './AdUnit';
 import { useAdManager } from '../utils/adManager';
 import { useSettingsManager } from '../utils/settingsManager';
 import { SocialButtons } from './SocialButtons';
-import { checkForAdBlocker } from '../utils/adBlockDetector';
 
 interface RedirectLayoutProps {
   children: React.ReactNode;
@@ -19,7 +19,6 @@ const RedirectLayout: React.FC<RedirectLayoutProps> = ({
 }) => {
   const { getActiveAdsByPosition } = useAdManager();
   const { settings } = useSettingsManager();
-  const [adBlockerDetected, setAdBlockerDetected] = useState(false);
   const [hasInterstitialShown, setHasInterstitialShown] = useState(false);
   
   const topAds = getActiveAdsByPosition('top');
@@ -36,15 +35,6 @@ const RedirectLayout: React.FC<RedirectLayoutProps> = ({
     console.log('- Bottom ads:', bottomAds);
     console.log('- Sticky ads:', stickyAds);
     console.log('- Interstitial ads:', interstitialAds);
-    
-    // Check for ad blocker
-    const detectAdBlocker = async () => {
-      const isBlocked = await checkForAdBlocker();
-      setAdBlockerDetected(isBlocked);
-      console.log('Ad blocker detected:', isBlocked);
-    };
-    
-    detectAdBlocker();
     
     // Show interstitial ad once per session
     if (interstitialAds.length > 0 && !hasInterstitialShown) {
@@ -93,14 +83,6 @@ const RedirectLayout: React.FC<RedirectLayoutProps> = ({
               <AdUnit key={ad.id} code={ad.code} position="interstitial" priority="high" className="relative z-40" />
             ))}
           </div>
-        </div>
-      )}
-      
-      {adBlockerDetected && (
-        <div className="w-full max-w-xl mb-4 bg-yellow-50 border border-yellow-200 p-4 rounded-xl text-center">
-          <p className="font-medium text-yellow-800">
-            Please disable your ad blocker to continue using this service.
-          </p>
         </div>
       )}
       

@@ -1,101 +1,83 @@
 
-// Advanced ad blocker detection with multiple reliable detection methods
-export const checkForAdBlocker = async (): Promise<boolean> => {
+/**
+ * Enhanced ad blocker detection utility
+ */
+
+// List of common ad domains to check
+const AD_DOMAINS = [
+  'pagead2.googlesyndication.com',
+  'securepubads.g.doubleclick.net',
+  'ad.doubleclick.net',
+  'adservice.google.com',
+  'static.doubleclick.net'
+];
+
+// Check if a specific ad resource can be fetched
+const canFetchAdResource = async (url: string): Promise<boolean> => {
   try {
-    console.log("Running enhanced adblock detection...");
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 1500);
     
-    const results: boolean[] = [];
-    let detectionCount = 0;
+    const response = await fetch(`https://${url}`, { 
+      method: 'HEAD',
+      signal: controller.signal,
+      mode: 'no-cors'
+    });
     
-    // Method 1: Create and check bait elements with known ad blocker targets
-    // Using fewer class names to reduce false positives
-    const adClassNames = [
-      'adsbox', 'ad-banner', 'adsbygoogle', 'ad-container',
-      'ad-placeholder', 'sponsored-content', 'advertisement'
-    ];
-    
-    for (const className of adClassNames) {
-      const testAd = document.createElement('div');
-      testAd.innerHTML = '&nbsp;';
-      testAd.className = className;
-      testAd.style.height = '1px';
-      testAd.style.position = 'absolute';
-      testAd.style.bottom = '-1px';
-      document.body.appendChild(testAd);
-      
-      // Store references to remove later
-      setTimeout(() => {
-        if (document.body.contains(testAd)) {
-          document.body.removeChild(testAd);
-        }
-      }, 500);
-      
-      // Check if element is hidden or altered
-      const elemResult = !testAd.offsetHeight || 
-                         window.getComputedStyle(testAd).display === 'none' || 
-                         window.getComputedStyle(testAd).visibility === 'hidden';
-      
-      if (elemResult) {
-        console.log(`Adblock detection: Bait element '${className}' was hidden`);
-        detectionCount++;
-      }
-    }
-    
-    // Method 2: Try to fetch known ad network resources
-    const adResources = [
-      'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js',
-      'https://securepubads.g.doubleclick.net/tag/js/gpt.js'
-    ];
-    
-    for (const resource of adResources) {
-      try {
-        const response = await fetch(resource, { 
-          method: 'HEAD',
-          mode: 'no-cors',
-          cache: 'no-cache',
-          signal: AbortSignal.timeout(500) // Shorter timeout
-        });
-      } catch (error) {
-        console.log(`Ad fetch blocked: ${resource}`);
-        detectionCount++;
-      }
-    }
-    
-    // Method 3: Check for common ad blocker browser extensions
-    const checkForAdBlockExtensions = () => {
-      // Detect if window has been modified by ad blockers
-      const hasBlockerProperty = (
-        'adBlocker' in window || 
-        'AdBlock' in window || 
-        'adblock' in window || 
-        'blockAdBlock' in window
-      );
-      
-      if (hasBlockerProperty) {
-        detectionCount++;
-        console.log("Ad blocker extension property detected");
-      }
-    };
-    
-    checkForAdBlockExtensions();
-    
-    // Only report ad blocker if multiple detection methods confirm it
-    // This reduces false positives
-    const isAdBlockerDetected = detectionCount >= 2; // Need at least 2 confirmations
-    
-    console.log(`Final adblock detection result: ${isAdBlockerDetected ? "BLOCKED" : "NOT BLOCKED"} (${detectionCount} indicators)`);
-    return isAdBlockerDetected;
-  } catch (e) {
-    console.error('Error in enhanced adblock detection:', e);
-    return false; // Don't assume blocker exists if there's an error
+    clearTimeout(timeoutId);
+    return true;
+  } catch (error) {
+    console.log(`Ad fetch blocked: https://${url}`);
+    return false;
   }
 };
 
-// Run ad blocker detection when module loads to initialize early
-checkForAdBlocker().then(detected => {
-  console.log("Initial adblock check result:", detected);
-  if (detected) {
-    // Trigger event for other parts of the app to listen for
-    window.dispatchEvent(new CustomEvent('adBlockerDetected'));
+// Check if an ad div gets hidden by ad blockers
+const isAdDivBlocked = (): boolean => {
+  // Create a test div with common ad class names
+  const testDiv = document.createElement('div');
+  testDiv.className = 'ad-unit adsbox doubleclick ad-placement';
+  testDiv.style.height = '10px';
+  testDiv.style.position = 'absolute';
+  testDiv.style.top = '-999px';
+  document.body.appendChild(testDiv);
+  
+  // Check if ad blockers have hidden it or modified its properties
+  const isBlocked = 
+    testDiv.offsetHeight === 0 || 
+    testDiv.clientHeight === 0 || 
+    window.getComputedStyle(testDiv).display === 'none' ||
+    window.getComputedStyle(testDiv).visibility === 'hidden';
+  
+  // Clean up
+  document.body.removeChild(testDiv);
+  return isBlocked;
+};
+
+export const checkForAdBlocker = async (): Promise<boolean> => {
+  console.log("Running enhanced adblock detection...");
+  
+  let blockedCount = 0;
+  let detectionMethods = 0;
+  
+  // Method 1: Try to fetch ad resources
+  detectionMethods++;
+  for (const domain of AD_DOMAINS.slice(0, 2)) { // Test just 2 domains for speed
+    const canFetch = await canFetchAdResource(domain);
+    if (!canFetch) {
+      blockedCount++;
+    }
   }
-});
+  
+  // Method 2: Check if test ad div is blocked
+  detectionMethods++;
+  if (isAdDivBlocked()) {
+    blockedCount++;
+  }
+  
+  // Determine if an ad blocker is active based on multiple signals
+  const isBlocked = blockedCount > 0;
+  console.log(`Final adblock detection result: ${isBlocked ? "BLOCKED" : "NOT BLOCKED"} (${blockedCount} indicators)`);
+  
+  return isBlocked;
+};

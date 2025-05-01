@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { Shield, CheckCircle, AlertCircle } from 'lucide-react';
+import { Shield, CheckCircle } from 'lucide-react';
 import AdUnit from './AdUnit';
 import { useAdManager } from '../utils/adManager';
 
@@ -30,22 +30,19 @@ const SecurityScan: React.FC<SecurityScanProps> = ({
 
   useEffect(() => {
     if (currentCheck >= securityChecks.length) {
-      // All checks complete
-      const allPassed = checkResults.every(result => result);
-      setTimeout(() => onComplete(allPassed), 1000);
+      // All checks complete - always pass security scan
+      setTimeout(() => onComplete(true), 1000);
       return;
     }
 
     const timeout = setTimeout(() => {
-      // Simulate a check result (true = passed, false = failed)
-      // In a real app, you would perform actual security checks here
-      const passed = Math.random() > 0.1; // 90% chance of passing for demo
-      setCheckResults(prev => [...prev, passed]);
+      // Always set checks to passed (true)
+      setCheckResults(prev => [...prev, true]);
       setCurrentCheck(prev => prev + 1);
     }, durationMs / securityChecks.length);
 
     return () => clearTimeout(timeout);
-  }, [currentCheck, durationMs, onComplete, checkResults]);
+  }, [currentCheck, durationMs, onComplete]);
   
   return (
     <div className="space-y-8">
@@ -72,25 +69,19 @@ const SecurityScan: React.FC<SecurityScanProps> = ({
           const isCurrentCheck = index === currentCheck;
           // Check has been processed
           const isProcessed = index < currentCheck;
-          // Result for this check (if processed)
-          const result = isProcessed ? checkResults[index] : null;
           
           return (
             <div 
               key={index}
               className={`flex items-center justify-between p-3 rounded-lg transition-all duration-300
                 ${isCurrentCheck ? 'bg-blue-50 shadow-sm' : ''}
-                ${isProcessed ? (result ? 'bg-green-50' : 'bg-red-50') : ''}
+                ${isProcessed ? 'bg-green-50' : ''}
               `}
             >
               <span className="font-medium">{check}</span>
               <span>
                 {isProcessed ? (
-                  result ? (
-                    <CheckCircle className="w-5 h-5 text-green-600" />
-                  ) : (
-                    <AlertCircle className="w-5 h-5 text-red-500" />
-                  )
+                  <CheckCircle className="w-5 h-5 text-green-600" />
                 ) : isCurrentCheck ? (
                   <div className="w-5 h-5 border-2 border-t-redirector-primary border-redirector-primary/30 rounded-full animate-spin" />
                 ) : (

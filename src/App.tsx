@@ -22,64 +22,76 @@ const App = () => {
   const [bypassAdBlocker, setBypassAdBlocker] = useState(false);
   const [checkComplete, setCheckComplete] = useState(false);
 
+  // Function to check adBlocker status and store in sessionStorage
+  const checkAndSetAdBlockerStatus = async () => {
+    try {
+      console.log("Starting enhanced adblock detection check...");
+      
+      // Check if we've already determined adBlocker status in this session
+      const sessionStatus = sessionStorage.getItem('adBlockerBypass');
+      if (sessionStatus === 'true') {
+        console.log("Ad blocker bypass found in session storage");
+        setBypassAdBlocker(true);
+        setCheckComplete(true);
+        return;
+      }
+      
+      // First check - immediate
+      const initialCheck = await checkForAdBlocker();
+      
+      // If initial check detects an adblocker, no need for second check
+      if (initialCheck) {
+        console.log("Adblock detected on initial check");
+        setAdBlockerDetected(true);
+        setCheckComplete(true);
+        return;
+      }
+      
+      // Second check with delay - some adblockers take time to activate
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      const secondCheck = await checkForAdBlocker();
+      
+      // Set the final result
+      setAdBlockerDetected(initialCheck || secondCheck);
+      console.log(`Adblock final detection result: ${initialCheck || secondCheck ? "BLOCKED" : "NOT BLOCKED"}`);
+      setCheckComplete(true);
+    } catch (error) {
+      console.error("Error in adblock detection:", error);
+      // Assume not blocked on error to prevent false positives
+      setAdBlockerDetected(false);
+      setCheckComplete(true);
+    }
+  };
+
   useEffect(() => {
     // Debug info for Netlify deployment
     console.log("App component mounted");
     console.log("Current route:", window.location.pathname);
     
-    const detectAdBlocker = async () => {
-      try {
-        console.log("Starting enhanced adblock detection check...");
-        
-        // First check - immediate
-        const initialCheck = await checkForAdBlocker();
-        
-        // If initial check detects an adblocker, no need for second check
-        if (initialCheck) {
-          console.log("Adblock detected on initial check");
-          setAdBlockerDetected(true);
-          setCheckComplete(true);
-          return;
-        }
-        
-        // Second check with delay - some adblockers take time to activate
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        const secondCheck = await checkForAdBlocker();
-        
-        // Set the final result
-        setAdBlockerDetected(initialCheck || secondCheck);
-        console.log(`Adblock final detection result: ${initialCheck || secondCheck ? "BLOCKED" : "NOT BLOCKED"}`);
-      } catch (error) {
-        console.error("Error in adblock detection:", error);
-        // Don't automatically assume blocked on error
-        setAdBlockerDetected(false);
-      } finally {
-        setCheckComplete(true);
-      }
-    };
-
-    detectAdBlocker();
+    // Check for adBlocker on initial load
+    checkAndSetAdBlockerStatus();
     
-    // Reduce the interval check frequency and only do it once
-    const singleCheck = setTimeout(async () => {
+    // Additional check after 3 seconds to catch delayed ad blockers
+    const delayedCheck = setTimeout(async () => {
       try {
-        if (!adBlockerDetected) {
+        if (!adBlockerDetected && !bypassAdBlocker) {
           const isBlocked = await checkForAdBlocker();
           if (isBlocked) {
-            console.log("Adblock detected during interval check");
+            console.log("Adblock detected during delayed check");
             setAdBlockerDetected(true);
           }
         }
       } catch (error) {
-        console.error("Error in interval adblock check:", error);
+        console.error("Error in delayed adblock check:", error);
       }
-    }, 5000); // Check once after 5 seconds
+    }, 3000);
     
-    return () => clearTimeout(singleCheck);
+    return () => clearTimeout(delayedCheck);
   }, []);
 
   const handleContinueAnyway = () => {
     setBypassAdBlocker(true);
+    sessionStorage.setItem('adBlockerBypass', 'true');
   };
 
   if (adBlockerDetected === true && !bypassAdBlocker) {
