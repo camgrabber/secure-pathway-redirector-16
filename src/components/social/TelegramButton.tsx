@@ -1,7 +1,7 @@
 
 import React from 'react';
-import { Send } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { TelegramIcon } from '@/components/icons/TelegramIcon';
+import { SocialButton } from './SocialButton';
 
 interface TelegramButtonProps {
   url: string;
@@ -9,14 +9,12 @@ interface TelegramButtonProps {
 
 export const TelegramButton = ({ url }: TelegramButtonProps) => {
   return (
-    <Button 
-      variant="outline" 
-      size="icon" 
-      className="rounded-full bg-white hover:bg-blue-50"
-      onClick={() => window.open(url, '_blank')}
+    <SocialButton
+      url={url}
+      icon={<TelegramIcon className="h-5 w-5 text-blue-500" />}
       title="Telegram"
-    >
-      <Send className="h-5 w-5 text-blue-500" />
-    </Button>
+      bgColor="white"
+      hoverColor="blue-50"
+    />
   );
 };

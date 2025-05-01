@@ -1,7 +1,7 @@
 
 import React from 'react';
-import { Instagram } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { InstagramIcon } from '@/components/icons/InstagramIcon';
+import { SocialButton } from './SocialButton';
 
 interface InstagramButtonProps {
   url: string;
@@ -9,14 +9,12 @@ interface InstagramButtonProps {
 
 export const InstagramButton = ({ url }: InstagramButtonProps) => {
   return (
-    <Button 
-      variant="outline" 
-      size="icon" 
-      className="rounded-full bg-white hover:bg-pink-50"
-      onClick={() => window.open(url, '_blank')}
+    <SocialButton
+      url={url}
+      icon={<InstagramIcon className="h-5 w-5 text-pink-600" />}
       title="Instagram"
-    >
-      <Instagram className="h-5 w-5 text-pink-600" />
-    </Button>
+      bgColor="white"
+      hoverColor="pink-50"
+    />
   );
 };

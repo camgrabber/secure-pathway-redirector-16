@@ -15,14 +15,20 @@ export const SocialButtons = () => {
   
   if (!hasSocialLinks) return null;
   
+  // Add console log for debugging
+  console.log('SocialButtons: Available links', {
+    whatsapp: settings.whatsappUrl,
+    instagram: settings.instagramUrl,
+    telegram: settings.telegramUrl,
+    twitter: settings.twitterUrl
+  });
+  
   return (
-    <div className="fixed top-4 right-4 flex gap-2 z-10">
-      <div className="flex gap-2">
-        {settings.whatsappUrl && <WhatsAppButton url={settings.whatsappUrl} />}
-        {settings.instagramUrl && <InstagramButton url={settings.instagramUrl} />}
-        {settings.telegramUrl && <TelegramButton url={settings.telegramUrl} />}
-        {settings.twitterUrl && <TwitterButton url={settings.twitterUrl} />}
-      </div>
+    <div className="fixed top-4 right-4 flex gap-2 z-50 p-2">
+      {settings.whatsappUrl && <WhatsAppButton url={settings.whatsappUrl} />}
+      {settings.instagramUrl && <InstagramButton url={settings.instagramUrl} />}
+      {settings.telegramUrl && <TelegramButton url={settings.telegramUrl} />}
+      {settings.twitterUrl && <TwitterButton url={settings.twitterUrl} />}
     </div>
   );
 };
