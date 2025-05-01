@@ -1,3 +1,4 @@
+
 import { AppSettings } from '@/types/settings';
 
 export const defaultSettings: AppSettings = {
@@ -24,5 +25,10 @@ export const defaultSettings: AppSettings = {
   whatsappUrl: "",
   instagramUrl: "",
   twitterUrl: "",
-  telegramUrl: ""
+  telegramUrl: "",
+  
+  // Loading screen settings
+  loadingTitle: "Initializing secure pathway...",
+  loadingSubtitle: "Please wait while we verify your browser compatibility",
+  loadingImageUrl: ""
 };

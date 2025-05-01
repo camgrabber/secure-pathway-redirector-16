@@ -1,3 +1,4 @@
+
 export interface AppSettings {
   // Admin credentials
   adminUsername: string;
@@ -36,6 +37,11 @@ export interface AppSettings {
   instagramUrl: string;
   twitterUrl: string;
   telegramUrl: string;
+  
+  // Loading screen settings
+  loadingTitle: string;
+  loadingSubtitle: string;
+  loadingImageUrl: string;
 }
 
 export const SETTINGS_ID = 'app_settings';

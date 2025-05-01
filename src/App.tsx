@@ -24,7 +24,7 @@ const AdBlockerDetectionWrapper = ({ children }: { children: React.ReactNode }) 
   const [adBlockerDetected, setAdBlockerDetected] = useState<boolean | null>(null);
   const [bypassAdBlocker, setBypassAdBlocker] = useState(false);
   const [checkComplete, setCheckComplete] = useState(false);
-  const { refreshSettings } = useSettingsManager();
+  const { refreshSettings, settings } = useSettingsManager();
 
   // Effect for initial load and route changes
   useEffect(() => {
@@ -94,13 +94,20 @@ const AdBlockerDetectionWrapper = ({ children }: { children: React.ReactNode }) 
     return <>{children}</>;
   }
 
-  // Loading state while checking
+  // Loading state while checking - now with customizable content from settings
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-200">
-      <div className="text-center">
+      <div className="text-center max-w-md px-4">
+        {settings?.loadingImageUrl && (
+          <img 
+            src={settings.loadingImageUrl} 
+            alt="Loading" 
+            className="mx-auto mb-6 max-h-32 object-contain" 
+          />
+        )}
         <div className="w-12 h-12 border-4 border-redirector-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-        <p className="text-lg font-medium text-gray-600">Initializing secure pathway...</p>
-        <p className="text-sm text-gray-500 mt-2">Please wait while we verify your browser compatibility</p>
+        <p className="text-lg font-medium text-gray-600">{settings?.loadingTitle || "Initializing secure pathway..."}</p>
+        <p className="text-sm text-gray-500 mt-2">{settings?.loadingSubtitle || "Please wait while we verify your browser compatibility"}</p>
       </div>
     </div>
   );

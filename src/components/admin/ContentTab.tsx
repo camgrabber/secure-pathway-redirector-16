@@ -5,6 +5,7 @@ import { useSettingsManager } from '@/utils/settingsManager';
 import { SocialLinksManager } from './SocialLinksManager';
 import { PageTitlesForm } from './forms/PageTitlesForm';
 import { ButtonLabelsForm } from './forms/ButtonLabelsForm';
+import { LoadingScreenForm } from './forms/LoadingScreenForm';
 
 export const ContentTab = () => {
   const { toast } = useToast();
@@ -55,6 +56,7 @@ export const ContentTab = () => {
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       <PageTitlesForm settings={settings} onSave={handleSaveSettings} />
       <ButtonLabelsForm settings={settings} onSave={handleSaveSettings} />
+      <LoadingScreenForm settings={settings} onSave={handleSaveSettings} />
       <SocialLinksManager />
     </div>
   );
