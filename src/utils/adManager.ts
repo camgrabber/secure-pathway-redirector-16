@@ -77,6 +77,22 @@ export const useAdManager = () => {
     try {
       console.log("Adding new ad unit:", adUnit);
       
+      // Check if the ad_units table exists
+      const { error: tableCheckError } = await supabase
+        .from('ad_units')
+        .select('count(*)', { count: 'exact', head: true });
+      
+      if (tableCheckError) {
+        console.log("Table may not exist, attempting to create it");
+        
+        // Create the table if it doesn't exist (only run once)
+        const { error: createTableError } = await supabase.rpc('create_ad_units_table_if_not_exists');
+        if (createTableError) {
+          console.error("Failed to create table:", createTableError);
+          // Continue anyway, as the table might exist but with a different error
+        }
+      }
+      
       const newAdUnit = {
         ...adUnit,
         id: `ad-${Date.now()}`
@@ -85,13 +101,15 @@ export const useAdManager = () => {
       const { data, error } = await supabase
         .from('ad_units')
         .insert([newAdUnit])
-        .select()
-        .single();
+        .select();
       
-      if (error) throw error;
+      if (error) {
+        console.error("Error inserting ad unit:", error);
+        throw error;
+      }
       
       console.log("Ad unit added successfully:", data);
-      return data;
+      return data[0];
     } catch (e) {
       console.error('Failed to add ad unit:', e);
       throw e;

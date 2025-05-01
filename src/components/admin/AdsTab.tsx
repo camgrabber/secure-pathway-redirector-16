@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Plus, RefreshCw, Eye, EyeOff, Save, Trash, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -366,9 +365,19 @@ export const AdsTab = () => {
           <Button 
             onClick={handleCreateAd}
             className="w-full"
+            disabled={isSubmitting}
           >
-            <Plus className="mr-2 h-4 w-4" />
-            Create New Ad Unit
+            {isSubmitting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Creating...
+              </>
+            ) : (
+              <>
+                <Plus className="mr-2 h-4 w-4" />
+                Create New Ad Unit
+              </>
+            )}
           </Button>
         </div>
       </div>
