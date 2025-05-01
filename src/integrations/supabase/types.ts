@@ -14,25 +14,37 @@ export type Database = {
           active: boolean
           code: string
           created_at: string | null
+          frequency: number | null
           id: string
           name: string
           position: string
+          priority: string | null
+          updated_at: string | null
+          view_threshold: number | null
         }
         Insert: {
           active?: boolean
           code: string
           created_at?: string | null
+          frequency?: number | null
           id: string
           name: string
           position: string
+          priority?: string | null
+          updated_at?: string | null
+          view_threshold?: number | null
         }
         Update: {
           active?: boolean
           code?: string
           created_at?: string | null
+          frequency?: number | null
           id?: string
           name?: string
           position?: string
+          priority?: string | null
+          updated_at?: string | null
+          view_threshold?: number | null
         }
         Relationships: []
       }
@@ -140,7 +152,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      create_ad_units_table_if_not_exists: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

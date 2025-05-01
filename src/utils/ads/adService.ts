@@ -34,8 +34,7 @@ export const ensureAdUnitsTableExists = async (): Promise<void> => {
     if (tableCheckError) {
       console.log("Table may not exist, attempting to create it");
       
-      // Fix: Use explicit type casting with the generic Supabase client method
-      // This avoids TypeScript errors by bypassing the type checks completely
+      // Use explicit type casting with the generic Supabase client method
       const { error: createTableError } = await (supabase.rpc as any)(
         'create_ad_units_table_if_not_exists',
         {}
@@ -43,7 +42,6 @@ export const ensureAdUnitsTableExists = async (): Promise<void> => {
       
       if (createTableError) {
         console.error("Failed to create table:", createTableError);
-        // Continue anyway, as the table might exist but with a different error
       }
     }
   } catch (e) {
